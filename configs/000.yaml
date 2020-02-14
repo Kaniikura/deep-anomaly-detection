@@ -1,0 +1,45 @@
+dataset:
+  name: 'MVTecGANDataset'
+  params:
+    idx_fold: 0
+    data_dir: 'data/mvtec'
+    csv_filename: 'bottle_binary.csv'
+
+  splits:
+    - mode: 'train'
+      split: 'train'
+
+transform:
+  name: 'gan_transform'
+  num_preprocessor: 8
+  params:
+    resize_to: (256, 256)
+
+model:
+  name: 'AnoGAN'
+  params:
+    zdim: 128
+
+train:
+  dir: 'train_dirs/000'
+  log_step: 2
+  batch_size: 8
+  gradient_accumulation_step: 1
+  num_epochs: 30
+  num_keep_checkpoint: 5
+  no_bias_decay: True
+  save_checkpoint_epoch: 1
+
+optimizer:
+  name: 'AdamW'
+  params:
+    lr: 0.00025
+    weight_decay: 0.01
+
+scheduler:
+  name: 'OneCycleLR'
+  params:
+    epochs: 30
+    max_lr: 0.00025
+    pct_start: 0.033
+    steps_per_epoch: 568
