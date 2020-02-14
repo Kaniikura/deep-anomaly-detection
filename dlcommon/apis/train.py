@@ -26,137 +26,6 @@ import dlcommon.utils
 def prepare_directories(config):
     os.makedirs(os.path.join(config.train.dir, 'checkpoint'), exist_ok=True)
 
-def train_gan_single_epoch(config, model, split, dataloader,
-                       hooks, optimizer, scheduler, epoch):
-    model.train()
-
-    batch_size = config.train.batch_size
-    total_size = len(dataloader.dataset)
-    total_step = math.ceil(total_size / batch_size)
-
-    # 最適化手法の設定
-    g_lr, d_lr = 0.0002, 0.0002
-    beta1, beta2 = 0.5, 0.5
-    g_optimizer = torch.optim.Adam(G.parameters(), g_lr, [beta1, beta2])
-    d_optimizer = torch.optim.Adam(D.parameters(), d_lr, [beta1, beta2])
-
-
-    tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
-    for i, data in tbar:
-        images = data['image'].cuda()
-        labels = data['label'].cuda()
-                
-    
-    # 誤差関数を定義
-    criterion = nn.BCEWithLogitsLoss(reduction='mean')
-
-    # ネットワークをGPUへ
-    device = config.device
-    G.to(device)
-    D.to(device)
-
-    G.train()  # モデルを訓練モードに
-    D.train()  # モデルを訓練モードに
-
-    # ネットワークがある程度固定であれば、高速化させる
-    torch.backends.cudnn.benchmark = True
-
-    # イテレーションカウンタをセット
-    iteration = 1
-    logs = []
-
-    # epochのループ
-    for epoch in range(num_epochs):
-
-        # 開始時刻を保存
-        t_epoch_start = time.time()
-        epoch_g_loss = 0.0  # epochの損失和
-        epoch_d_loss = 0.0  # epochの損失和
-
-        print('-------------')
-        print('Epoch {}/{}'.format(epoch, num_epochs))
-        print('-------------')
-        print('（train）')
-
-        # データローダーからminibatchずつ取り出すループ
-        for batch_i, (imgs,_) in enumerate(dataloader):
-
-            # --------------------
-            # 1. Discriminatorの学習
-            # --------------------
-            # ミニバッチがサイズが1だと、バッチノーマライゼーションでエラーになるのでさける
-            if imgs.size()[0] == 1:
-                continue
-
-            # GPUが使えるならGPUにデータを送る
-            imgs = imgs.to(device)
-
-            # 正解ラベルと偽ラベルを作成
-            # epochの最後のイテレーションはミニバッチの数が少なくなる
-            mini_batch_size = imgs.size()[0]
-            label_real = torch.full((mini_batch_size,), 1).to(device)
-            label_fake = torch.full((mini_batch_size,), 0).to(device)
-
-            # 真の画像を判定
-            d_out_real, _ = D(imgs)
-
-            # 偽の画像を生成して判定
-            input_z = torch.randn(mini_batch_size, z_dim).to(device)
-            input_z = input_z.view(input_z.size(0), input_z.size(1))
-            fake_imgs = G(input_z)
-            d_out_fake, _ = D(fake_imgs)
-
-            # 誤差を計算
-            d_loss_real = criterion(d_out_real.view(-1), label_real)
-            d_loss_fake = criterion(d_out_fake.view(-1), label_fake)
-            d_loss = d_loss_real + d_loss_fake
-
-            # バックプロパゲーション
-            g_optimizer.zero_grad()
-            d_optimizer.zero_grad()
-
-            d_loss.backward()
-            d_optimizer.step()
-
-            # --------------------
-            # 2. Generatorの学習
-            # --------------------
-            # 偽の画像を生成して判定
-            input_z = torch.randn(mini_batch_size, z_dim).to(device)
-            fake_imgs = G(input_z)
-            d_out_fake, _ = D(fake_imgs)
-
-            # 誤差を計算
-            g_loss = criterion(d_out_fake.view(-1), label_real)
-
-            # バックプロパゲーション
-            g_optimizer.zero_grad()
-            d_optimizer.zero_grad()
-            g_loss.backward()
-            g_optimizer.step()
-
-            # --------------------
-            # 3. 記録
-            # --------------------
-            epoch_d_loss += d_loss.item()
-            epoch_g_loss += g_loss.item()
-            iteration += 1
-            
-        imshow(torchvision.utils.make_grid(fake_imgs.cpu().detach()),convert_uint8=True)
-            
-
-        # epochのphaseごとのlossと正解率
-        t_epoch_finish = time.time()
-        print('-------------')
-        print('epoch {} || Epoch_D_Loss:{:.4f} ||Epoch_G_Loss:{:.4f}'.format(
-            epoch, epoch_d_loss/batch_size, epoch_g_loss/batch_size))
-        print('timer:  {:.4f} sec.'.format(t_epoch_finish - t_epoch_start))
-        t_epoch_start = time.time()
-
-    
-    print("総イテレーション回数:", iteration)
-
-    return G, D
 
 def train_single_epoch(config, model, split, dataloader,
                        hooks, optimizer, scheduler, epoch):
@@ -171,6 +40,9 @@ def train_single_epoch(config, model, split, dataloader,
         images = data['image'].cuda()
         labels = data['label'].cuda()
         
+        img = images[0].cpu().numpy()
+        plt.imshow(img)
+        plt.show()
 
         """
         outputs = hooks.forward_fn(model=model, images=images, labels=labels,
@@ -284,6 +156,7 @@ def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
             dataloader = dataloader['dataloader']
             train_single_epoch(config, model, split, dataloader, hooks,
                                optimizer, scheduler, epoch)
+            break
 
         score_dict = {}
         ckpt_score = None

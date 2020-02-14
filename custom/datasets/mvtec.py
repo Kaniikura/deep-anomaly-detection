@@ -13,54 +13,58 @@ from torch.utils.data.dataset import Dataset
 import dlcommon
 
 @dlcommon.DATASETS.register
-class MVTecGANDataset(Dataset):
+class MetricDataset(Dataset):
     def __init__(self,
                  data_dir,
                  split,
                  transform=None,
                  idx_fold=0,
                  num_fold=1,
-                 csv_filename='train.ver0.csv',
-                 submission_filename='sample_submission.csv',
+                 target = 'bottle',
+                 csv_filename='csvs/metric_learning.csv',
                  **_):
         self.split = split
+        self.target = target
         self.idx_fold = idx_fold
         self.num_fold = num_fold
         self.transform = transform
         self.data_dir = data_dir
         self.csv_filename = csv_filename
-        self.submission_filename = submission_filename
 
-        self.df_examples, self.image_paths = self._load_examples()
+        self.df = self._load_examples()
 
     def _load_examples(self):
         csv_path = os.path.join(self.data_dir, self.csv_filename)
 
-        df_examples = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path)
 
-        df_examples = df_examples.fillna('')
+        df = df.fillna('')
 
-        train_idx = self.idx_fold
+        valid_idx = self.idx_fold
         test_idx  = self.num_fold
 
-        if self.split == 'test':
-            df_examples = df_examples[df_examples.Fold == test_idx ]
+        if self.split == 'valid':
+            df = df[df.Category == target]
+            df = df[df.Fold == valid_idx ]
+        elif self.split == 'test':
+            df = df[df.Category == target]
+            df = df[df.Fold == test_idx]
         elif self.split == 'train':
-            df_examples = df_examples[df_examples.Fold == train_idx]
+            df = df[df.Category != target]
+            df = df[(df.Fold != valid_idx) & (df.Fold != test_idx)]
 
-        df_examples = df_examples.set_index('Image')
-        image_paths = list(df_examples.index.unique())
+        df = df.reset_index()
 
-        return df_examples, image_paths
+        return df
 
     def __getitem__(self, index):
-        image_suf_path = self.image_paths[index]
-        image_id = os.path.split(image_suf_path)[-1]
-        image_path = os.path.join(self.data_dir, image_suf_path)
+        selected_row = self.df.iloc[index]
 
+        image_path = selected_row['Image']
+        image_id = image_path.split('/')[-1]
         image = cv2.imread(image_path)
         
-        label = self.df_examples.loc[image_suf_path]['Is_Anomaly']
+        label = selected_row['LabelIndex']
 
         if self.transform is not None:
             image = self.transform(image)
@@ -68,5 +72,5 @@ class MVTecGANDataset(Dataset):
         return {'image_id': image_id, 'image': image, 'label': label}
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.df)
     

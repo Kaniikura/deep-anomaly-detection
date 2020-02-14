@@ -1,24 +1,28 @@
 dataset:
-  name: 'MVTecGANDataset'
+  name: 'MetricDataset'
   params:
     idx_fold: 0
-    data_dir: 'data/mvtec'
-    csv_filename: 'bottle_binary.csv'
+    data_dir: 'data/mvtec_ad'
+    csv_filename: 'csvs/metric_learning.csv'
+    target: 'bottle'
 
   splits:
     - mode: 'train'
       split: 'train'
+    - mode: 'valid'
+      split: 'valid'
 
 transform:
-  name: 'gan_transform'
+  name: 'metric_transform'
   num_preprocessor: 8
   params:
     resize_to: (256, 256)
 
 model:
-  name: 'AnoGAN'
+  name: 'ArcFace'
   params:
-    zdim: 128
+    num_features: 1024
+    num_classes: 14
 
 train:
   dir: 'train_dirs/000'
