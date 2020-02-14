@@ -2,37 +2,37 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import torch
 from torch import nn
+from torch.nn import Parameter
 from .encoder import build_encoder
 
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, num_features):
+    def __init__(self, encoder, num_features):
         super().__init__()
 
         self.encoder = build_encoder(encoder)
-        self.enc_channels = encoder.channels
-        print(encoder.channels)
+        self.enc_channels = self.encoder.channels
+        print(self.encoder.channels)
 
-        self.fc = nn.Linear(self.enc_channels, num_features)
-        self.bn = nn.BatchNorm1d(num_features)
+        #self.fc = nn.Linear(self.enc_channels, num_features)
+        #self.bn = nn.BatchNorm1d(num_features)
 
     def forward(self, input):
             x = self.encoder(input)
-            x = self.fc(x)
-            x = self.bn(x)
+            #x = self.fc(x)
+            #x = self.bn(x)
             
-            x = x.view(x.shape[0], -1)
-            x = self.fc(x)
-            output = self.bn2(x)
-
+            output = x
+            
             return output
 
 
 class ArcFace(nn.Module):
-    def __init__(self, num_features, num_classes, s=30.0, m=0.50):
+    def __init__(self, encoder, num_features, num_classes, s=30.0, m=0.50):
         super(ArcFace, self).__init__()
-        self.feature_extractor = FeatureExtractor(num_features)
+        self.encoder = FeatureExtractor(encoder, num_features)
 
         self.num_features = num_features
         self.n_classes = num_classes
@@ -41,12 +41,13 @@ class ArcFace(nn.Module):
         self.W = Parameter(torch.FloatTensor(num_classes, num_features))
         nn.init.xavier_uniform_(self.W)
 
-    def get_feature(self, input):
-        output = self.feature_extractor(input)
+    def forward(self, input):
+    #def get_feature(self, input):
+        output = self.encoder(input)
 
         return output
 
-    def forward(self, input, label=None):
+    """def forward(self, input, label=None):
         x = get_feature(input)
         # normalize features
         x = F.normalize(input)
@@ -65,4 +66,4 @@ class ArcFace(nn.Module):
         # feature re-scale
         output *= self.s
 
-        return output
+        return output"""

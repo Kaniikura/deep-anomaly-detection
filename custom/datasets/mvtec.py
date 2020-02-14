@@ -44,13 +44,13 @@ class MetricDataset(Dataset):
         test_idx  = self.num_fold
 
         if self.split == 'valid':
-            df = df[df.Category == target]
+            df = df[df.Category == self.target]
             df = df[df.Fold == valid_idx ]
         elif self.split == 'test':
-            df = df[df.Category == target]
+            df = df[df.Category == self.target]
             df = df[df.Fold == test_idx]
         elif self.split == 'train':
-            df = df[df.Category != target]
+            df = df[df.Category != self.target]
             df = df[(df.Fold != valid_idx) & (df.Fold != test_idx)]
 
         df = df.reset_index()

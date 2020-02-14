@@ -144,6 +144,8 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
 def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
     best_ckpt_score = -100000
+    from torchsummary import summary
+    print(summary(model,(3,256,256)))
     for epoch in range(last_epoch, config.train.num_epochs):
         # train 
         for dataloader in dataloaders:
@@ -266,11 +268,8 @@ def run(config):
         if 'encoder_lr_ratio' in config.train:
             encoder_lr_ratio = config.train.encoder_lr_ratio
             group_decay_encoder, group_no_decay_encoder = group_weight(model.encoder)
-            group_decay_decoder, group_no_decay_decoder = group_weight(model.decoder)
             base_lr = config.optimizer.params.lr
-            params = [{'params': group_decay_decoder},
-                      {'params': group_no_decay_decoder, 'weight_decay': 0.0},
-                      {'params': group_decay_encoder, 'lr': base_lr * encoder_lr_ratio},
+            params = [{'params': group_decay_encoder, 'lr': base_lr * encoder_lr_ratio},
                       {'params': group_no_decay_encoder, 'lr': base_lr * encoder_lr_ratio, 'weight_decay': 0.0}]
         else:
             group_decay, group_no_decay = group_weight(model)
@@ -279,7 +278,7 @@ def run(config):
     elif 'encoder_lr_ratio' in config.train:
         denom = config.train.encoder_lr_ratio
         base_lr = config.optimizer.params.lr
-        params = [{'params': model.decoder.parameters()},
+        params = [#{'params': model.decoder.parameters()},
                   {'params': model.encoder.parameters(), 'lr': base_lr * encoder_lr_ratio}]
     else:
         params = model.parameters()

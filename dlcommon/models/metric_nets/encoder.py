@@ -21,18 +21,18 @@ class ResNetEncoder(nn.Module):
         del self.backbone.fc
 
     def forward(self, x):
-        x0 = self.backbone.conv1(x)
-        x0 = self.backbone.bn1(x0)
-        x0 = self.backbone.relu(x0)
+        x = self.backbone.conv1(x)
+        x = self.backbone.bn1(x)
+        x = self.backbone.relu(x)
 
-        x1 = self.backbone.maxpool(x0)
-        x1 = self.backbone.layer1(x1)
+        x = self.backbone.maxpool(x)
+        x = self.backbone.layer1(x)
 
-        x2 = self.backbone.layer2(x1)
-        x3 = self.backbone.layer3(x2)
-        x4 = self.backbone.layer4(x3)
+        x = self.backbone.layer2(x)
+        x = self.backbone.layer3(x)
+        x = self.backbone.layer4(x)
 
-        return [x4, x3, x2, x1, x0]
+        return x
 
 
 class DenseNetEncoder(nn.Module):
@@ -40,14 +40,6 @@ class DenseNetEncoder(nn.Module):
         super().__init__()
         self.backbone = backbone
         del self.backbone.classifier
-
-    @staticmethod
-    def _transition(x, transition_block):
-        for module in transition_block:
-            x = module(x)
-            if isinstance(module, nn.ReLU):
-                skip = x
-        return x, skip
 
     def initialize(self):
         for m in self.modules():
@@ -61,22 +53,21 @@ class DenseNetEncoder(nn.Module):
         x = self.backbone.features.conv0(x)
         x = self.backbone.features.norm0(x)
         x = self.backbone.features.relu0(x)
-        x0 = x
 
         x = self.backbone.features.pool0(x)
         x = self.backbone.features.denseblock1(x)
-        x, x1 = self._transition(x, self.backbone.features.transition1)
+        x = self.backbone.features.transition1(x)
 
         x = self.backbone.features.denseblock2(x)
-        x, x2 = self._transition(x, self.backbone.features.transition2)
+        x = self.backbone.features.transition2(x)
 
         x = self.backbone.features.denseblock3(x)
-        x, x3 = self._transition(x, self.backbone.features.transition3)
+        x = self.backbone.features.transition3(x)
 
         x = self.backbone.features.denseblock4(x)
-        x4 = self.backbone.features.norm5(x)
+        x = self.backbone.features.norm5(x)
 
-        return [x4, x3, x2, x1, x0]
+        return x
 
 
 class SENetEncoder(nn.Module):
@@ -91,22 +82,16 @@ class SENetEncoder(nn.Module):
 
         backbone.layer0 = nn.Sequential(OrderedDict(new_layer0))
         self.backbone = backbone
-        self.channels = [
-                self.backbone.layer4[-1].conv3.out_channels,
-                self.backbone.layer3[-1].conv3.out_channels,
-                self.backbone.layer2[-1].conv3.out_channels,
-                self.backbone.layer1[-1].conv3.out_channels,
-                self.backbone.layer0.conv1.out_channels,
-        ]
+       
 
     def forward(self, x):
-        encode0 = self.backbone.layer0(x)
-        encode1 = self.backbone.layer1(F.max_pool2d(encode0, 2))
-        encode2 = self.backbone.layer2(encode1)
-        encode3 = self.backbone.layer3(encode2)
-        encode4 = self.backbone.layer4(encode3)
+        x = self.backbone.layer0(x)
+        x = self.backbone.layer1(F.max_pool2d(x, 2))
+        x = self.backbone.layer2(x)
+        x = self.backbone.layer3(x)
+        x = self.backbone.layer4(x)
 
-        return [encode4, encode3, encode2, encode1, encode0]
+        return x
 
 
 class EfficientNetEncoder(EfficientNet):
@@ -121,21 +106,15 @@ class EfficientNetEncoder(EfficientNet):
         del self._fc
         
     def forward(self, x):
-        result = []
         x = F.relu(self._bn0(self._conv_stem(x)))
-        result.append(x)
 
-        skip_connection_idx = 0
         for idx, block in enumerate(self._blocks):
             drop_connect_rate = self._global_params.drop_connect_rate
             if drop_connect_rate:
                 drop_connect_rate *= float(idx) / len(self._blocks)
             x = block(x, drop_connect_rate=drop_connect_rate)
-            if idx == self._skip_connections[skip_connection_idx] - 1:
-                skip_connection_idx += 1
-                result.append(x)
         
-        return list(reversed(result))
+        return x
 
     def load_state_dict(self, state_dict, **kwargs):
         state_dict.pop('_fc.bias')
