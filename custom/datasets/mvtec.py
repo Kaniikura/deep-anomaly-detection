@@ -20,11 +20,11 @@ class MetricDataset(Dataset):
                  transform=None,
                  idx_fold=0,
                  num_fold=1,
-                 target = 'bottle',
+                 anomaly_cat = 'bottle',
                  csv_filename='csvs/metric_learning.csv',
                  **_):
         self.split = split
-        self.target = target
+        self.anomaly_cat = anomaly_cat
         self.idx_fold = idx_fold
         self.num_fold = num_fold
         self.transform = transform
@@ -44,14 +44,18 @@ class MetricDataset(Dataset):
         test_idx  = self.num_fold
 
         if self.split == 'valid':
-            df = df[df.Category == self.target]
+            df = df[df.Category == self.anomaly_cat]
             df = df[df.Fold == valid_idx ]
         elif self.split == 'test':
-            df = df[df.Category == self.target]
+            df = df[df.Category == self.anomaly_cat]
             df = df[df.Fold == test_idx]
         elif self.split == 'train':
-            df = df[df.Category != self.target]
+            df = df[df.Category != self.anomaly_cat]
             df = df[(df.Fold != valid_idx) & (df.Fold != test_idx)]
+
+        targets = sorted(df.Category.unique())
+        label_map = {cat:i for i,cat in enumerate(targets)}
+        df['LabelIndex'] = df.Category.apply(lambda x: label_map[x])
 
         df = df.reset_index()
 
@@ -62,7 +66,7 @@ class MetricDataset(Dataset):
 
         image_path = selected_row['Image']
         image_id = image_path.split('/')[-1]
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path).astype(np.float32)
         
         label = selected_row['LabelIndex']
 

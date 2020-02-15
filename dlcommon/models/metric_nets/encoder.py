@@ -160,12 +160,13 @@ BACKBONE_OUT_SHAPE = {
     'resnet50': (2048, 8, 8),
     'resnet101': (2048, 8, 8),
     'resnet152': (2048, 8, 8),
-    ## WIP
     'resnext50_32x4d_wsl': (2048, 8, 8),
     'resnext101_32x8d_wsl': (2048, 8, 8),
-    'resnext101_32x16d_wsl': (2048, 1024, 512, 256, 64),
-    'resnext101_32x32d_wsl': (2048, 1024, 512, 256, 64),
-    'resnext101_32x48d_wsl': (2048, 1024, 512, 256, 64),
+    ## WIP
+    #'resnext101_64x4d_wsl': (),
+    #'resnext101_32x16d_wsl': (),
+    #'resnext101_32x32d_wsl': (),
+    #'resnext101_32x48d_wsl': (),
     'densenet121': (1024, 8, 8),
     'densenet169': (1664, 8, 8),
     'densenet201': (1920, 8, 8),

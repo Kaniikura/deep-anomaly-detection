@@ -79,7 +79,7 @@ def register_torch_modules():
         nn.MultiMarginLoss,
         nn.TripletMarginLoss,
 
-        #kvt.losses.DiceLoss,
+        dlcommon.losses.FocalLoss,
     ]
 
     for loss in losses:
@@ -119,6 +119,7 @@ def register_torch_modules():
 def register_default_hooks():
     HOOKS.register(dlcommon.hooks.DefaultLossHook)
     HOOKS.register(dlcommon.hooks.DefaultForwardHook)
+    HOOKS.register(dlcommon.hooks.MetricForwardHook)
     HOOKS.register(dlcommon.hooks.DefaultPostForwardHook)
     HOOKS.register(dlcommon.hooks.DefaultModelBuilderHook)
     HOOKS.register(dlcommon.hooks.DefaultLoggerHook)

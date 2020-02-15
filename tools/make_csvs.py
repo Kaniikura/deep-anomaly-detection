@@ -4,25 +4,7 @@ import pandas as pd
 from pathlib import Path
 from utils import *
 
-MVTECAD_LABEL_MAP = {
-        'cable':       0, 
-        'screw':       1,
-        'hazelnut':    2 ,
-        'zipper':      3, 
-        'tile':        4, 
-        'leather' :    5,
-        'toothbrush' : 6, 
-        'carpet' :     7, 
-        'bottle':      8, 
-        'wood':        9, 
-        'capsule' :   10, 
-        'metal_nut':  11,
-        'pill':       12, 
-        'grid':       13, 
-        'transistor': 14,
-}
-
-def make_df(data_dir, data_type, label_map):
+def make_df(data_dir, data_type):
     def make_df_split(data_dir, data_type, split):
         img_dir = data_dir/data_type/'images'/split
         assert img_dir.is_dir()
@@ -35,11 +17,10 @@ def make_df(data_dir, data_type, label_map):
                     assert ssd.is_dir()
                     for img_path in ssd.glob('*.png'):
                         cat = sd.name
-                        cat_idx = label_map[cat]
                         st = ssd.name
                         anml = 0 if st=='good' else 1
                         list_of_dicts.append({'Image':img_path, 'Status':st,
-                                              'Category':cat , 'LabelIndex': cat_idx,
+                                              'Category':cat ,
                                               'Anomaly':anml,
                                               'CatAnml': f'{cat}_{anml}',
                                               'ORG_split':split})
@@ -58,13 +39,13 @@ def make_df(data_dir, data_type, label_map):
     
     return df
 
-def create_csvs(data_dir, data_type, label_map):
+def create_csvs(data_dir, data_type):
     if data_type == 'mvtec_ad':
         target = 'CatAnml'
         
         # metlic learning should be evaluated with cross-validation, 
         # cause original train data has no anomaly instances
-        df = make_df(data_dir, data_type,label_map)
+        df = make_df(data_dir, data_type)
         df_metric_learning = take_stratified_split(df, target, n_splits=10)
         del df_metric_learning[target]
         
@@ -93,4 +74,4 @@ if __name__ == '__main__':
     #print('----- Make CIFAR10 for MNIST -----')
     #create_csvs(data_dir, 'cifar10')
     print('----- Make CSVs for MVTec_AD -----')
-    create_csvs(data_dir, 'mvtec_ad', MVTECAD_LABEL_MAP)
+    create_csvs(data_dir, 'mvtec_ad')

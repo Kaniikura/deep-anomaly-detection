@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import Parameter
+import torch.nn.functional as F
+
 from .encoder import build_encoder
 
 
@@ -17,21 +19,20 @@ class FeatureExtractor(nn.Module):
         self._out_shape = self.encoder.out_shape
         self.out_features = np.prod(np.array(self._out_shape))
 
-        #self.fc = nn.Linear(self.out_features, num_features)
+        self.fc = nn.Linear(self.out_features, num_features)
 
     def forward(self, input):
             x = self.encoder(input)
-            #x = x.view(-1, self.out_features)
-            #x = self.fc(x)
+            x = x.view(-1, self.out_features)
+            x = self.fc(x)
             output = x
 
             return output
 
 
-class ArcFace(nn.Module):
-    def __init__(self, encoder, num_features, num_classes, s=30.0, m=0.50):
-        super(ArcFace, self).__init__()
-        self.encoder = FeatureExtractor(encoder, num_features)
+class ArcFaceProduct(nn.Module):
+    def __init__(self, num_features, num_classes, s=30.0, m=0.50):
+        super().__init__()
 
         self.num_features = num_features
         self.n_classes = num_classes
@@ -40,14 +41,7 @@ class ArcFace(nn.Module):
         self.W = Parameter(torch.FloatTensor(num_classes, num_features))
         nn.init.xavier_uniform_(self.W)
 
-    def forward(self, input):
-    #def get_feature(self, input):
-        output = self.encoder(input)
-
-        return output
-
-    """def forward(self, input, label=None):
-        x = get_feature(input)
+    def forward(self, input, label=None):
         # normalize features
         x = F.normalize(input)
         # normalize weights
@@ -65,4 +59,17 @@ class ArcFace(nn.Module):
         # feature re-scale
         output *= self.s
 
-        return output"""
+        return output
+
+
+class ArcFace(nn.Module):
+    def __init__(self, encoder, num_features, num_classes):
+        super(ArcFace, self).__init__()
+        self.encoder = FeatureExtractor(encoder, num_features)
+        self.product = ArcFaceProduct(num_features, num_classes)
+        
+    def forward(self, input, label=None):
+        x = self.encoder(input)
+        x = self.product(x, label)
+        
+        return x

@@ -40,16 +40,11 @@ def train_single_epoch(config, model, split, dataloader,
         images = data['image'].cuda()
         labels = data['label'].cuda()
         
-        img = images[0].cpu().numpy()
-        plt.imshow(img)
-        plt.show()
-
-        """
         outputs = hooks.forward_fn(model=model, images=images, labels=labels,
                                    data=data, is_train=True)
         outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
                                         data=data, is_train=True)
-        loss = hooks.loss_fn(outputs=outputs, labels=labels.float(), data=data, is_train=True)
+        loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=True)
         
         if isinstance(loss, dict):
             loss_dict = loss
@@ -58,7 +53,7 @@ def train_single_epoch(config, model, split, dataloader,
             loss_dict = {'loss': loss}
 
         loss.backward()
-        """
+        
         if config.train.gradient_accumulation_step is None:
             optimizer.step()
             optimizer.zero_grad()
@@ -144,8 +139,7 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
 def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
     best_ckpt_score = -100000
-    from torchsummary import summary
-    print(summary(model,(3,256,256)))
+    
     for epoch in range(last_epoch, config.train.num_epochs):
         # train 
         for dataloader in dataloaders:

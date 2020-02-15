@@ -4,7 +4,7 @@ dataset:
     idx_fold: 0
     data_dir: 'data/mvtec_ad'
     csv_filename: 'csvs/metric_learning.csv'
-    target: 'bottle'
+    anomaly_cat: 'bottle'
 
   splits:
     - mode: 'train'
@@ -23,7 +23,7 @@ model:
   params:
     num_features: 512
     num_classes: 14
-    encoder: 'resnext101_64x4d_wsl'
+    encoder: 'resnet18'
 
 train:
   dir: 'train_dirs/000'
@@ -35,6 +35,11 @@ train:
   no_bias_decay: True
   save_checkpoint_epoch: 1
   encoder_lr_ratio: 0.1
+
+loss:
+  name: 'FocalLoss'
+  params: 
+    gamma: 2
 
 optimizer:
   name: 'AdamW'
@@ -49,3 +54,8 @@ scheduler:
     max_lr: 0.00025
     pct_start: 0.033
     steps_per_epoch: 568
+
+hooks:
+  forward:
+    name: 'MetricForwardHook'
+
