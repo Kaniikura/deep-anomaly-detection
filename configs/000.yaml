@@ -50,7 +50,7 @@ optimizer:
     weight_decay: 0.01
 
 scheduler:
-  name: 'OneCycleLR'
+  name: 'CosineAnnealingLR'
   params:
     epochs: 30
     max_lr: 0.00025
