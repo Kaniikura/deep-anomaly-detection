@@ -130,7 +130,7 @@ def build_encoder(backbone):
         backbone_config = {'name': backbone_name[:-4]}
     else:
         backbone_config = {'name': backbone_name}
-        
+
     backbone = build_from_config(backbone_config, BACKBONES)
 
     if backbone_name.startswith('se'):
@@ -160,15 +160,16 @@ BACKBONE_OUT_SHAPE = {
     'resnet50': (2048, 8, 8),
     'resnet101': (2048, 8, 8),
     'resnet152': (2048, 8, 8),
-    'resnext50_32x4d_wsl': (2048, 1024, 512, 256, 64),
-    'resnext101_32x8d_wsl': (2048, 1024, 512, 256, 64),
+    ## WIP
+    'resnext50_32x4d_wsl': (2048, 8, 8),
+    'resnext101_32x8d_wsl': (2048, 8, 8),
     'resnext101_32x16d_wsl': (2048, 1024, 512, 256, 64),
     'resnext101_32x32d_wsl': (2048, 1024, 512, 256, 64),
     'resnext101_32x48d_wsl': (2048, 1024, 512, 256, 64),
-    'densenet121': (1024, 1024, 512, 256, 64),
-    'densenet169': (1664, 1280, 512, 256, 64),
-    'densenet201': (1920, 1792, 512, 256, 64),
-    'densenet161': (2208, 2112, 768, 384, 96),
+    'densenet121': (1024, 8, 8),
+    'densenet169': (1664, 8, 8),
+    'densenet201': (1920, 8, 8),
+    'densenet161': (2208, 8, 8),
 }
 
 

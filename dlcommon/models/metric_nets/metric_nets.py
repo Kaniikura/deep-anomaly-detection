@@ -17,7 +17,7 @@ class FeatureExtractor(nn.Module):
         self._out_shape = self.encoder.out_shape
         self.out_features = np.prod(np.array(self._out_shape))
 
-        self.fc = nn.Linear(self.out_features, num_features)
+        #self.fc = nn.Linear(self.out_features, num_features)
 
     def forward(self, input):
             x = self.encoder(input)

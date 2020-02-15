@@ -23,7 +23,7 @@ model:
   params:
     num_features: 512
     num_classes: 14
-    encoder: 'densenet121'
+    encoder: 'resnext101_64x4d_wsl'
 
 train:
   dir: 'train_dirs/000'
