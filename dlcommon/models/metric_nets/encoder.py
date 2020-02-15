@@ -126,7 +126,11 @@ class EfficientNetEncoder(EfficientNet):
 def build_encoder(backbone):
     backbone_name = backbone
 
-    backbone_config = {'name': backbone_name}
+    if 'wsl' in backbone_name:
+        backbone_config = {'name': backbone_name[:-4]}
+    else:
+        backbone_config = {'name': backbone_name}
+        
     backbone = build_from_config(backbone_config, BACKBONES)
 
     if backbone_name.startswith('se'):

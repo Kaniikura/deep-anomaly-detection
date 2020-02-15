@@ -73,8 +73,6 @@ def build_hooks(config):
             post_forward_hook_config.update(hooks.post_forward)
         if 'loss' in hooks:
             loss_hook_config.update(hooks.loss)
-        if 'metric' in hooks:
-            metric_hook_config.update(hooks.metric)
         if 'logger' in hooks:
             logger_hook_config.update(hooks.logger)
         if 'write_result' in hooks:
