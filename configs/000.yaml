@@ -21,9 +21,9 @@ transform:
 model:
   name: 'ArcFace'
   params:
-    num_features: 1024
+    num_features: 512
     num_classes: 14
-    encoder: 'efficientnet-b2'
+    encoder: 'resnext50_32x4d_wsl'
 
 train:
   dir: 'train_dirs/000'

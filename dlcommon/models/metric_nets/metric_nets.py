@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import Parameter
@@ -13,19 +14,17 @@ class FeatureExtractor(nn.Module):
         super().__init__()
 
         self.encoder = build_encoder(encoder)
-        self.enc_channels = self.encoder.channels
-        print(self.encoder.channels)
+        self._out_shape = self.encoder.out_shape
+        self.out_features = np.prod(np.array(self._out_shape))
 
-        #self.fc = nn.Linear(self.enc_channels, num_features)
-        #self.bn = nn.BatchNorm1d(num_features)
+        self.fc = nn.Linear(self.out_features, num_features)
 
     def forward(self, input):
             x = self.encoder(input)
+            #x = x.view(-1, self.out_features)
             #x = self.fc(x)
-            #x = self.bn(x)
-            
             output = x
-            
+
             return output
 
 

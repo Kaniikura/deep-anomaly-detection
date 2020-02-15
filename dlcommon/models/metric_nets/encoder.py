@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from collections import OrderedDict
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -101,7 +103,6 @@ class EfficientNetEncoder(EfficientNet):
         super().__init__(blocks_args, global_params)
         self._skip_connections = list(skip_connections)
         self._skip_connections.append(len(self._blocks))
-        self.channels = [round_filters(1280, self._global_params)]
         
         del self._fc
         
@@ -132,7 +133,7 @@ def build_encoder(backbone):
         return SENetEncoder(backbone)
     elif 'wsl' in backbone_name:
         encoder = ResNetEncoder(backbone)
-        encoder.channels = BACKBONE_CHANNELS[backbone_name[:-4]]
+        encoder.out_shape = BACKBONE_OUT_SHAPE[backbone_name]
     elif backbone_name.startswith('resnet'):
         encoder = ResNetEncoder(backbone)
     elif backbone_name.startswith('densenet'):
@@ -141,25 +142,25 @@ def build_encoder(backbone):
         encoder = EfficientNetEncoder(**efficient_net_encoders[backbone_name]['params'])
         settings = efficient_net_encoders[backbone_name]['pretrained_settings']['imagenet']
         encoder.load_state_dict(model_zoo.load_url(settings['url']))
-        encoder.channels = efficient_net_encoders[backbone_name]['out_shapes']
+        encoder.out_shape = efficient_net_encoders[backbone_name]['out_shapes']
 
-    if backbone_name in BACKBONE_CHANNELS:
-        encoder.channels = BACKBONE_CHANNELS[backbone_name]
+    if backbone_name in BACKBONE_OUT_SHAPE:
+        encoder.out_shape = BACKBONE_OUT_SHAPE[backbone_name]
 
     return encoder
 
 
-BACKBONE_CHANNELS = {
-    'resnet18': (512, 256, 128, 64, 64),
-    'resnet34': (512, 256, 128, 64, 64),
-    'resnet50': (2048, 1024, 512, 256, 64),
-    'resnet101': (2048, 1024, 512, 256, 64),
-    'resnet152': (2048, 1024, 512, 256, 64),
-    'resnext50_32x4d': (2048, 1024, 512, 256, 64),
-    'resnext101_32x8d': (2048, 1024, 512, 256, 64),
-    'resnext101_32x16d': (2048, 1024, 512, 256, 64),
-    'resnext101_32x32d': (2048, 1024, 512, 256, 64),
-    'resnext101_32x48d': (2048, 1024, 512, 256, 64),
+BACKBONE_OUT_SHAPE = {
+    'resnet18': (512, 8, 8),
+    'resnet34': (512, 8, 8),
+    'resnet50': (2048, 8, 8),
+    'resnet101': (2048, 8, 8),
+    'resnet152': (2048, 8, 8),
+    'resnext50_32x4d_wsl': (2048, 1024, 512, 256, 64),
+    'resnext101_32x8d_wsl': (2048, 1024, 512, 256, 64),
+    'resnext101_32x16d_wsl': (2048, 1024, 512, 256, 64),
+    'resnext101_32x32d_wsl': (2048, 1024, 512, 256, 64),
+    'resnext101_32x48d_wsl': (2048, 1024, 512, 256, 64),
     'densenet121': (1024, 1024, 512, 256, 64),
     'densenet169': (1664, 1280, 512, 256, 64),
     'densenet201': (1920, 1792, 512, 256, 64),
