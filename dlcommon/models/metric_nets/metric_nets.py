@@ -67,9 +67,14 @@ class ArcFace(nn.Module):
         super(ArcFace, self).__init__()
         self.encoder = FeatureExtractor(encoder, num_features)
         self.product = ArcFaceProduct(num_features, num_classes)
+    
+    def get_feature(self, input):
+        x = self.encoder(input)
+
+        return x
         
     def forward(self, input, label=None):
-        x = self.encoder(input)
+        x = self.get_feature(input)
         x = self.product(x, label)
         
         return x

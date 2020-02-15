@@ -17,8 +17,7 @@ transform:
   name: 'metric_transform'
   num_preprocessor: 8
   params:
-    resize_to: (280, 280)
-    crop_size: (256, 256)
+    resize_to: (256, 256)
 
 model:
   name: 'ArcFace'
@@ -38,6 +37,9 @@ train:
   save_checkpoint_epoch: 1
   encoder_lr_ratio: 0.1
 
+evaluation:
+  batch_size: 8
+
 loss:
   name: 'FocalLoss'
   params: 
@@ -50,7 +52,7 @@ optimizer:
     weight_decay: 0.01
 
 scheduler:
-  name: 'CosineAnnealingLR'
+  name: 'OneCycleLR'
   params:
     epochs: 30
     max_lr: 0.00025

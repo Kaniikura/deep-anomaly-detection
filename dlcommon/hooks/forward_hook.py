@@ -25,7 +25,7 @@ class MetricForwardHook(ForwardHookBase):
         if is_train:
             return model(images, labels)
         else:
-            return model.encoder(images)
+            return model.get_feature(images)
 
 
 class PostForwardHookBase(object):

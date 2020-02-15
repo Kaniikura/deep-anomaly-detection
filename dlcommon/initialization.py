@@ -110,7 +110,7 @@ def register_torch_modules():
             optim.lr_scheduler.CosineAnnealingLR,
             optim.lr_scheduler.ReduceLROnPlateau,
             optim.lr_scheduler.CyclicLR,
-            #optim.lr_scheduler.OneCycleLR,
+            optim.lr_scheduler.OneCycleLR,
     ]
     for scheduler in schedulers:
         SCHEDULERS.register(scheduler)

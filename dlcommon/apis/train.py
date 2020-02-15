@@ -40,7 +40,7 @@ def train_single_epoch(config, model, split, dataloader,
     for i, data in tbar:
         images = data['image'].cuda()
         labels = data['label'].cuda()
-        
+
         outputs = hooks.forward_fn(model=model, images=images, labels=labels,
                                    data=data, is_train=True)
         outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
@@ -78,12 +78,13 @@ def train_single_epoch(config, model, split, dataloader,
         
         hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
+    
 
 
 def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
     model.eval()
 
-    batch_size = config.train.batch_size
+    batch_size = config.evaluation.batch_size
     total_size = len(dataloader.dataset)
     total_step = math.ceil(total_size / batch_size)
 
@@ -93,10 +94,14 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
         images = data['image'].cuda()
         labels = data['label'].cuda()
         
-        embs = hooks.forward_fn(model=model, images=images, labels=labels,
-                                   data=data, is_train=False)
-        for emb in embs:
-            aggregated_embs.append(emb) 
+        with torch.no_grad():
+            embs = hooks.forward_fn(model=model, images=images, labels=labels,
+                                    data=data, is_train=False)
+            embs = embs.cpu().detach().numpy()
+            aggregated_embs.append(embs) 
+
+    # Putting all embeddings in shape (number of samples, length of one sample embeddings)
+    aggregated_embs = np.concatenate(aggregated_embs) 
 
     return aggregated_embs
 
