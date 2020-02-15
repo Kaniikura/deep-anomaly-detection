@@ -20,15 +20,17 @@ class MetricDataset(Dataset):
                  transform=None,
                  idx_fold=0,
                  num_fold=1,
-                 anomaly_cat = 'bottle',
+                 num_classes=15,
+                 onehot_enc = False,
                  csv_filename='csvs/metric_learning.csv',
                  **_):
         self.split = split
-        self.anomaly_cat = anomaly_cat
         self.idx_fold = idx_fold
         self.num_fold = num_fold
         self.transform = transform
         self.data_dir = data_dir
+        self.num_classes = num_classes
+        self.onehot_enc = onehot_enc
         self.csv_filename = csv_filename
 
         self.df = self._load_examples()
@@ -44,13 +46,12 @@ class MetricDataset(Dataset):
         test_idx  = self.num_fold
 
         if self.split == 'valid':
-            df = df[df.Category == self.anomaly_cat]
             df = df[df.Fold == valid_idx ]
         elif self.split == 'test':
-            df = df[df.Category == self.anomaly_cat]
             df = df[df.Fold == test_idx]
-        elif self.split == 'train':
-            df = df[df.Category != self.anomaly_cat]
+        elif self.split == 'train' or 'get_embeddings':
+            # remove anomaly samples from train data
+            df = df[df['Anomaly'] == 0]
             df = df[(df.Fold != valid_idx) & (df.Fold != test_idx)]
 
         targets = sorted(df.Category.unique())
@@ -69,6 +70,10 @@ class MetricDataset(Dataset):
         image = cv2.imread(image_path).astype(np.float32)
         
         label = selected_row['LabelIndex']
+        if self.onehot_enc:
+            label_oh = np.zeros(self.num_classes, dtype=np.int)
+            label_oh[label_idx] = 1
+            label = label_oh
 
         if self.transform is not None:
             image = self.transform(image)

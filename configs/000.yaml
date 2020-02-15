@@ -4,11 +4,12 @@ dataset:
     idx_fold: 0
     data_dir: 'data/mvtec_ad'
     csv_filename: 'csvs/metric_learning.csv'
-    anomaly_cat: 'bottle'
 
   splits:
     - mode: 'train'
       split: 'train'
+    - mode: 'valid'
+      split: 'get_embeddings'
     - mode: 'valid'
       split: 'valid'
 
@@ -16,13 +17,14 @@ transform:
   name: 'metric_transform'
   num_preprocessor: 8
   params:
-    resize_to: (256, 256)
+    resize_to: (280, 280)
+    crop_size: (256, 256)
 
 model:
   name: 'ArcFace'
   params:
     num_features: 512
-    num_classes: 14
+    num_classes: 15
     encoder: 'resnet18'
 
 train:

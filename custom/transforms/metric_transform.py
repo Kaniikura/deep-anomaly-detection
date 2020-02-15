@@ -8,27 +8,31 @@ import albumentations as albu
 
 import dlcommon
 
-def get_training_augmentation(resize_to=(256,256)):
+def get_training_augmentation(resize_to=(280,280), crop_size=(256, 256)):
     print('[get_training_augmentation] resize_to:', resize_to) 
+    print('[get_training_augmentation] crop_size:', crop_size) 
 
     train_transform = [
-        albu.HorizontalFlip(p=0.5),
-        albu.VerticalFlip(p=0.5),
+        albu.RandomScale(scale_limit=(0, 0.1),p=0.75), 
+        albu.Rotate(limit=10, p=0.75),
         albu.Resize(*resize_to),
-        #albu.Normalize(),
+        albu.RandomCrop(*crop_size),
+        albu.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=(-0.2, 0.25), p=0.75),
+        
+        albu.Normalize(),
     ]
 
     return albu.Compose(train_transform)
 
-def get_test_augmentation(resize_to=(256,256)):
+def get_test_augmentation(resize_to=(280,280)):
     test_transform = [
         albu.Resize(*resize_to),
-        #albu.Normalize(),
+        albu.Normalize(),
     ]
     return albu.Compose(test_transform)
 
 @dlcommon.TRANSFORMS.register
-def metric_transform(split, resize_to=(256,256), tta=1, **_):
+def metric_transform(split, resize_to=(280,280), tta=1, **_):
     if isinstance(resize_to, str):
         resize_to = eval(resize_to)
     
@@ -44,7 +48,7 @@ def metric_transform(split, resize_to=(256,256), tta=1, **_):
         else:
             augmented = test_aug(image=image)
 
-        if tta > 1:
+        if tta > 1 and (split!='get_embeddings'):
             images = []
             images.append(augmented['image'])
             images.append(test_aug(image=np.fliplr(image))['image'])

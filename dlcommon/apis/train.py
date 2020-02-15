@@ -21,6 +21,7 @@ from dlcommon.builder import (
         build_dataloaders
 )
 import dlcommon.utils
+from dlcommon.mixup import MixupGenerator
 
 
 def prepare_directories(config):
@@ -64,25 +65,42 @@ def train_single_epoch(config, model, split, dataloader,
         if config.scheduler.name == 'OneCycleLR':
             scheduler.step()
 
-        ##log_dict = {key:value.item() for key, value in loss_dict.items()}
-        ##log_dict['lr'] = optimizer.param_groups[0]['lr']
+        log_dict = {key:value.item() for key, value in loss_dict.items()}
+        log_dict['lr'] = optimizer.param_groups[0]['lr']
 
         f_epoch = epoch + i / total_step
         tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
-        #tbar.set_postfix(lr=optimizer.param_groups[0]['lr'],
-        #                 loss=loss.item())
+        tbar.set_postfix(lr=optimizer.param_groups[0]['lr'],
+                         loss=loss.item())
         tbar.set_postfix(loss=(total_step-i)/total_step)
 
-        log_dict = dict()
         log_dict['image'] = images.clone().cpu().detach()
-        log_dict['score'] = i / total_size
-        outputs = torch.rand((7,1))
-        labels = torch.ones((7,1))
+        
         hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
 
 
-def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
+def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
+    model.eval()
+
+    batch_size = config.train.batch_size
+    total_size = len(dataloader.dataset)
+    total_step = math.ceil(total_size / batch_size)
+
+    aggregated_embs = []
+    tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
+    for i, data in tbar:
+        images = data['image'].cuda()
+        labels = data['label'].cuda()
+        
+        embs = hooks.forward_fn(model=model, images=images, labels=labels,
+                                   data=data, is_train=False)
+        for emb in embs:
+            aggregated_embs.append(emb) 
+
+    return aggregated_embs
+
+def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch, train_embs):
     model.eval()
 
     batch_size = config.evaluation.batch_size
@@ -97,13 +115,13 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
-            """images = data['image'].cuda() #to(device)
+            images = data['image'].cuda() #to(device)
             labels = data['label'].cuda() #to(device)
 
             outputs = hooks.forward_fn(model=model, images=images, labels=labels,
                                        data=data, is_train=False)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
-                                            data=data, is_train=True)
+                                            data=data, is_train=True, train_embs=train_embs)
             loss = hooks.loss_fn(outputs=outputs, labels=labels.float(), data=data, is_train=False)
             if isinstance(loss, dict):
                 loss_dict = loss
@@ -120,7 +138,7 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
                 aggregated_metric_dict[key].append(value)
 
             for key, value in loss_dict.items():
-                aggregated_loss_dict[key].append(value.item())"""
+                aggregated_loss_dict[key].append(value.item())
 
     #metric_dict = {key:sum(value)/len(value)
     #               for key, value in aggregated_metric_dict.items()}
@@ -134,8 +152,7 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
                     #log_dict=log_dict,
                     epoch=epoch)
 
-    return metric_dict['score']
-
+    return metric_dict['score']  
 
 def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
     best_ckpt_score = -100000
@@ -152,11 +169,20 @@ def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
             dataloader = dataloader['dataloader']
             train_single_epoch(config, model, split, dataloader, hooks,
                                optimizer, scheduler, epoch)
-            break
 
         score_dict = {}
         ckpt_score = None
         # validation
+        # get train data embeddings
+        for dataloader in dataloaders:
+            split = dataloader['split']
+            dataset_mode = dataloader['mode']
+            if split != 'get_embeddings':
+                continue
+
+            dataloader = dataloader['dataloader']
+            embs = get_train_data_embedddings(config, model, split, dataloader, hooks, epoch)
+            
         #for dataloader in dataloaders:
             #split = dataloader['split']
             #dataset_mode = dataloader['mode']
