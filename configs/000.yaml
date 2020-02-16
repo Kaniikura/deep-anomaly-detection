@@ -60,6 +60,6 @@ scheduler:
     steps_per_epoch: 568
 
 hooks:
-  forward:
-    name: 'MetricForwardHook'
+  distance:
+    name: 'CosineDistanceHook'
 

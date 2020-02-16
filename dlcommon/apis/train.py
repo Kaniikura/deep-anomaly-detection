@@ -79,7 +79,7 @@ def train_single_epoch(config, model, split, dataloader,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
     
 
-def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch, train_embs):
+def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
     model.eval()
 
     batch_size = config.evaluation.batch_size
@@ -89,8 +89,11 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch, train_
     with torch.no_grad():
         losses = []
         aggregated_loss_dict = defaultdict(list)
+        aggregated_outputs_dict = defaultdict(list)
         aggregated_outputs = []
         aggregated_labels = []
+
+        aggregated_metric_dict = defaultdict(list)
 
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
@@ -100,7 +103,8 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch, train_
             outputs = hooks.forward_fn(model=model, images=images, labels=labels,
                                        data=data, is_train=False)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
-                                            data=data, is_train=True, train_embs=train_embs)
+                                            data=data, is_train=True)
+            
             loss = hooks.loss_fn(outputs=outputs, labels=labels.float(), data=data, is_train=False)
             if isinstance(loss, dict):
                 loss_dict = loss
@@ -119,16 +123,16 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch, train_
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
 
-    #metric_dict = {key:sum(value)/len(value)
-    #               for key, value in aggregated_metric_dict.items()}
-        
-    #log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
-    #log_dict.update(metric_dict)
+    metric_dict = {key:sum(value)/len(value)
+                   for key, value in aggregated_metric_dict.items()}
+
+    log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
+    log_dict.update(metric_dict)
 
     hooks.logger_fn(split=split,
                     outputs=aggregated_outputs,
                     labels=aggregated_labels,
-                    #log_dict=log_dict,
+                    log_dict=log_dict,
                     epoch=epoch)
 
     return metric_dict['score']  

@@ -75,10 +75,12 @@ class MetricDataset(Dataset):
             label_oh[label_idx] = 1
             label = label_oh
 
+        is_anomaly = selected_row['Anomaly']
+
         if self.transform is not None:
             image = self.transform(image)
 
-        return {'image_id': image_id, 'image': image, 'label': label}
+        return {'image_id': image_id, 'image': image, 'label': label, 'is_anomaly': is_anomaly}
 
     def __len__(self):
         return len(self.df)
