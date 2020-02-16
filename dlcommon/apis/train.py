@@ -116,7 +116,7 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
 
-
+    print(aggregated_loss_dict)
     log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
 
     hooks.logger_fn(split=split,
