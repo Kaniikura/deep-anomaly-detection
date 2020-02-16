@@ -1,1 +1,1 @@
-from .metric_nets import ArcFace
+from .metric_nets import AdaCos, ArcFace, CosFace, SphereFace

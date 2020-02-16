@@ -8,6 +8,7 @@ from torch import nn
 from torch.nn import Parameter
 import torch.nn.functional as F
 
+from .metrics import AdaCosProduct, ArcFaceProduct, CosFaceProduct, SphereFaceProduct
 from .encoder import build_encoder
 
 
@@ -30,43 +31,11 @@ class FeatureExtractor(nn.Module):
             return output
 
 
-class ArcFaceProduct(nn.Module):
-    def __init__(self, num_features, num_classes, s=30.0, m=0.50):
-        super().__init__()
-
-        self.num_features = num_features
-        self.n_classes = num_classes
-        self.s = s
-        self.m = m
-        self.W = Parameter(torch.FloatTensor(num_classes, num_features))
-        nn.init.xavier_uniform_(self.W)
-
-    def forward(self, input, label=None):
-        # normalize features
-        x = F.normalize(input)
-        # normalize weights
-        W = F.normalize(self.W)
-        # dot product
-        logits = F.linear(x, W)
-        if label is None:
-            return logits
-        # add margin
-        theta = torch.acos(torch.clamp(logits, -1.0 + 1e-7, 1.0 - 1e-7))
-        target_logits = torch.cos(theta + self.m)
-        one_hot = torch.zeros_like(logits)
-        one_hot.scatter_(1, label.view(-1, 1).long(), 1)
-        output = logits * (1 - one_hot) + target_logits * one_hot
-        # feature re-scale
-        output *= self.s
-
-        return output
-
-
-class ArcFace(nn.Module):
-    def __init__(self, encoder, num_features, num_classes):
-        super(ArcFace, self).__init__()
+class xxxFace(nn.Module):
+    def __init__(self, encoder, num_features, num_classes, xface_product):
+        super(xxxFace, self).__init__()
         self.encoder = FeatureExtractor(encoder, num_features)
-        self.product = ArcFaceProduct(num_features, num_classes)
+        self.product = xface_product(num_features, num_classes)
     
     def get_feature(self, input):
         x = self.encoder(input)
@@ -78,3 +47,20 @@ class ArcFace(nn.Module):
         x = self.product(x, label)
         
         return x
+
+
+class ArcFace(xxxFace):
+    def __init__(self, encoder, num_features, num_classes, xface_product=ArcFaceProduct):
+        super(ArcFace, self).__init__(encoder, num_features, num_classes, xface_product)
+
+class AdaCos(xxxFace):
+    def __init__(self, encoder, num_features, num_classes, xface_product=AdaCosProduct):
+        super(AdaCos, self).__init__(encoder, num_features, num_classes, xface_product)
+
+class CosFace(xxxFace):
+    def __init__(self, encoder, num_features, num_classes, xface_product=CosFaceProduct):
+        super(CosFace, self).__init__(encoder, num_features, num_classes, xface_product)
+
+class SphereFace(xxxFace):
+    def __init__(self, encoder, num_features, num_classes, xface_product=SphereFaceProduct):
+        super(SphereFace, self).__init__(encoder, num_features, num_classes, xface_product)

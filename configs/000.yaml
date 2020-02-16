@@ -20,7 +20,7 @@ transform:
     resize_to: (256, 256)
 
 model:
-  name: 'ArcFace'
+  name: 'AdaCos'
   params:
     num_features: 512
     num_classes: 15
