@@ -19,6 +19,32 @@ from dlcommon.builder import (
 import dlcommon.utils
 
 
+def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
+    model.eval()
+
+    batch_size = config.evaluation.batch_size
+    total_size = len(dataloader.dataset)
+    total_step = math.ceil(total_size / batch_size)
+
+    aggregated_embs = []
+    tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
+    for i, data in tbar:
+        images = data['image'].cuda()
+        labels = data['label'].cuda()
+        
+
+        with torch.no_grad():
+            embs = hooks.forward_fn(model=model, images=images, labels=labels,
+                                    data=data, is_train=False)
+            embs = embs.cpu().detach().numpy()
+            aggregated_embs.append(embs) 
+
+    # Putting all embeddings in shape (number of samples, length of one sample embeddings)
+    aggregated_embs = np.concatenate(aggregated_embs) 
+
+    return aggregated_embs
+
+
 def evaluate_split(config, model, split, dataloader, hooks):
     model.eval()
 

@@ -20,8 +20,12 @@ class ResNetEncoder(nn.Module):
     def __init__(self, backbone, **_):
         super().__init__()
         self.backbone = backbone
+        if hasattr(self.backbone, 'avg_pool'):
+            del self.backbone.avg_pool
+        else:
+            del self.backbone.avgpool
         del self.backbone.fc
-
+        
     def forward(self, x):
         x = self.backbone.conv1(x)
         x = self.backbone.bn1(x)
@@ -35,6 +39,19 @@ class ResNetEncoder(nn.Module):
         x = self.backbone.layer4(x)
 
         return x
+
+class PretrainedModelsResNextEncoder(nn.Module):
+    def __init__(self, backbone, **_):
+        super().__init__()
+        self.backbone = backbone
+        del self.backbone.avg_pool
+        del self.backbone.last_linear
+        
+    def forward(self, x):
+        x = self.backbone.features(x)
+
+        return x
+
 
 
 class DenseNetEncoder(nn.Module):
@@ -136,7 +153,10 @@ def build_encoder(backbone):
     if backbone_name.startswith('se'):
         return SENetEncoder(backbone)
     elif 'wsl' in backbone_name:
-        encoder = ResNetEncoder(backbone)
+        if any(x in backbone_name for x in ['101_32x4d','101_64x4d']): 
+            encoder = PretrainedModelsResNextEncoder(backbone) # pytorch-pretrainedmodels
+        else: 
+            encoder = ResNetEncoder(backbone) # torchvision models
         encoder.out_shape = BACKBONE_OUT_SHAPE[backbone_name]
     elif backbone_name.startswith('resnet'):
         encoder = ResNetEncoder(backbone)
@@ -153,7 +173,8 @@ def build_encoder(backbone):
 
     return encoder
 
-
+# Input assumes image　shape (3, 256, 256),
+    # If you use a different size , modify the last two values as ceil(image_size/32).
 BACKBONE_OUT_SHAPE = {
     'resnet18': (512, 8, 8),
     'resnet34': (512, 8, 8),
@@ -161,12 +182,13 @@ BACKBONE_OUT_SHAPE = {
     'resnet101': (2048, 8, 8),
     'resnet152': (2048, 8, 8),
     'resnext50_32x4d_wsl': (2048, 8, 8),
-    'resnext101_32x8d_wsl': (2048, 8, 8),
+    'resnext101_32x4d_wsl': (2048, 8, 8),            
+    'resnext101_64x4d_wsl': (2048, 8, 8),  
     ## WIP
-    #'resnext101_64x4d_wsl': (),
-    #'resnext101_32x16d_wsl': (),
-    #'resnext101_32x32d_wsl': (),
-    #'resnext101_32x48d_wsl': (),
+    #'resnext101_32x8d_wsl': (2048, 8, 8), 
+    #'resnext101_32x16d_wsl': (2048, 8, 8),
+    #'resnext101_32x32d_wsl': (2048, 8, 8),
+    #'resnext101_32x48d_wsl': (2048, 8, 8),
     'densenet121': (1024, 8, 8),
     'densenet169': (1664, 8, 8),
     'densenet201': (1920, 8, 8),
