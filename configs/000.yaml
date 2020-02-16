@@ -33,9 +33,9 @@ train:
   gradient_accumulation_step: 1
   num_epochs: 30
   num_keep_checkpoint: 5
-  no_bias_decay: True
+  #no_bias_decay: True
+  #encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
-  encoder_lr_ratio: 0.1
 
 evaluation:
   batch_size: 8
@@ -48,16 +48,13 @@ loss:
 optimizer:
   name: 'AdamW'
   params:
-    lr: 0.00025
-    weight_decay: 0.01
+    lr: 0.01
+    weight_decay: 0.1
 
 scheduler:
-  name: 'OneCycleLR'
+  name: 'StepLR'
   params:
-    epochs: 30
-    max_lr: 0.00025
-    pct_start: 0.033
-    steps_per_epoch: 568
+    step_size : 10
 
 hooks:
   distance:

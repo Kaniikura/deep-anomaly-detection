@@ -39,7 +39,6 @@ def train_single_epoch(config, model, split, dataloader,
     for i, data in tbar:
         images = data['image'].cuda()
         labels = data['label'].cuda()
-
         outputs = hooks.forward_fn(model=model, images=images, labels=labels,
                                    data=data, is_train=True)
         outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
@@ -65,15 +64,15 @@ def train_single_epoch(config, model, split, dataloader,
             scheduler.step()
 
         log_dict = {key:value.item() for key, value in loss_dict.items()}
-        log_dict['lr'] = optimizer.param_groups[0]['lr']
+        log_dict['lr'] = optimizer.param_groups[-1]['lr']
 
         f_epoch = epoch + i / total_step
         tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
-        tbar.set_postfix(lr=optimizer.param_groups[0]['lr'],
+        tbar.set_postfix(lr=optimizer.param_groups[-1]['lr'],
                          loss=loss.item())
-        tbar.set_postfix(loss=(total_step-i)/total_step)
 
-        log_dict['image'] = images.clone().cpu().detach()
+        if i % 10 == 0:
+            log_dict['images'] = images.cpu()
         
         hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
@@ -97,7 +96,6 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
         for i, data in tbar:
             images = data['image'].cuda() #to(device)
             labels = data['label'].cuda() #to(device)
-
             outputs = hooks.forward_fn(model=model, images=images, labels=labels,
                                        data=data, is_train=False)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
@@ -112,12 +110,18 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
             f_epoch = epoch + i / total_step
             tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
+            tbar.set_postfix(loss=loss.item())
 
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
+            log_dict = {}
+            if i % 10 == 0:
+                log_dict.update({'images':images.cpu()})
+            hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
+                        epoch=epoch, step=i, num_steps_in_epoch=total_step)
 
-    print(aggregated_loss_dict)
     log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
+            
 
     hooks.logger_fn(split=split,
                     outputs=aggregated_outputs,
@@ -243,7 +247,6 @@ def run(config):
 
     # build model
     model = build_model(config, hooks)
-
     # build loss
     loss = build_loss(config)
     loss_fn = hooks.loss_fn
@@ -255,7 +258,8 @@ def run(config):
             encoder_lr_ratio = config.train.encoder_lr_ratio
             group_decay_encoder, group_no_decay_encoder = group_weight(model.encoder)
             base_lr = config.optimizer.params.lr
-            params = [{'params': group_decay_encoder, 'lr': base_lr * encoder_lr_ratio},
+            params = [{'params': model.product.parameters(), 'lr': base_lr},
+                      {'params': group_decay_encoder, 'lr': base_lr * encoder_lr_ratio},
                       {'params': group_no_decay_encoder, 'lr': base_lr * encoder_lr_ratio, 'weight_decay': 0.0}]
         else:
             group_decay, group_no_decay = group_weight(model)
@@ -264,8 +268,8 @@ def run(config):
     elif 'encoder_lr_ratio' in config.train:
         denom = config.train.encoder_lr_ratio
         base_lr = config.optimizer.params.lr
-        params = [#{'params': model.decoder.parameters()},
-                  {'params': model.encoder.parameters(), 'lr': base_lr * encoder_lr_ratio}]
+        #params = [{'params': model.encoder.parameters(), 'lr': base_lr * encoder_lr_ratio},
+        #          {'params': model.product.parameters(), 'lr': base_lr}]
     else:
         params = model.parameters()
     optimizer = build_optimizer(config, params=params)

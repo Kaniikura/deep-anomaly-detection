@@ -5,6 +5,8 @@ from __future__ import print_function
 
 import abc
 
+import numpy as np
+import torchvision
 
 class LoggerHookBase(object):
     __metaclass__ = abc.ABCMeta
@@ -14,6 +16,14 @@ class LoggerHookBase(object):
                  epoch, step=None, num_steps_in_epoch=None):
         pass
 
+
+def inv_normalize(imgs, mean=(0.485, 0.456, 0.406), 
+                        std=(0.229, 0.224, 0.225)):
+    imgs[:, 0, :, :] = imgs[:, 0, :, :] * std[0] + mean[0]
+    imgs[:, 1, :, :] = imgs[:, 1, :, :] * std[1] + mean[1]
+    imgs[:, 2, :, :] = imgs[:, 2, :, :] * std[2] + mean[2]
+    
+    return imgs
 
 class DefaultLoggerHook(LoggerHookBase):
     def __call__(self, writer, split, outputs, labels, log_dict,
@@ -26,9 +36,10 @@ class DefaultLoggerHook(LoggerHookBase):
             log_step = epoch
 
         for key, value in log_dict.items():
-            if 'image' in key:
-                img = log_dict[key]
-                img = img[0]
-                writer.add_image(f'{split}/{key}', img, log_step)
+            if key=='images':
+                imgs = log_dict[key]
+                imgs = inv_normalize(imgs)
+                grid = torchvision.utils.make_grid(imgs)
+                writer.add_image(f'{split}/{key}', grid, log_step)
             else:
                 writer.add_scalar(f'{split}/{key}', log_dict[key], log_step)

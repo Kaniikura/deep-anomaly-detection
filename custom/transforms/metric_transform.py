@@ -8,7 +8,7 @@ import albumentations as albu
 
 import dlcommon
 
-def get_training_augmentation(resize_to=(270,270), crop_size=(256, 256)):
+def get_training_augmentation(resize_to=(256,256), crop_size=(224, 224)):
     print('[get_training_augmentation] resize_to:', resize_to) 
     #print('[get_training_augmentation] crop_size:', crop_size) 
 
@@ -24,7 +24,7 @@ def get_training_augmentation(resize_to=(270,270), crop_size=(256, 256)):
 
     return albu.Compose(train_transform)
 
-def get_test_augmentation(resize_to=(280,280)):
+def get_test_augmentation(resize_to=(256,256)):
     test_transform = [
         albu.Resize(*resize_to),
         albu.Normalize(),
@@ -32,7 +32,7 @@ def get_test_augmentation(resize_to=(280,280)):
     return albu.Compose(test_transform)
 
 @dlcommon.TRANSFORMS.register
-def metric_transform(split, resize_to=(280,280), tta=1, **_):
+def metric_transform(split, resize_to=(256,256), tta=1, **_):
     if isinstance(resize_to, str):
         resize_to = eval(resize_to)
     
@@ -61,7 +61,7 @@ def metric_transform(split, resize_to=(280,280), tta=1, **_):
         else:
             image = augmented['image']
             image = np.transpose(image, (2,0,1))
-
+           
         return image
 
     return transform

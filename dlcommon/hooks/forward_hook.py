@@ -15,6 +15,7 @@ class ForwardHookBase(object):
 
 class DefaultForwardHook(ForwardHookBase):
     def __call__(self, model, images, labels=None, data=None, is_train=False):
+        #return model(images, labels)
         return model(images)
 
 

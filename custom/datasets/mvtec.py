@@ -67,7 +67,7 @@ class MetricDataset(Dataset):
 
         image_path = selected_row['Image']
         image_id = image_path.split('/')[-1]
-        image = cv2.imread(image_path).astype(np.float32)
+        image = cv2.imread(image_path)
         
         label = selected_row['LabelIndex']
         if self.onehot_enc:
