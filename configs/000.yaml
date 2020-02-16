@@ -8,10 +8,10 @@ dataset:
   splits:
     - mode: 'train'
       split: 'train'
-    - mode: 'valid'
+    - mode: 'validation'
       split: 'get_embeddings'
-    - mode: 'valid'
-      split: 'valid'
+    - mode: 'validation'
+      split: 'validation'
 
 transform:
   name: 'metric_transform'

@@ -45,7 +45,7 @@ class MetricDataset(Dataset):
         valid_idx = self.idx_fold
         test_idx  = self.num_fold
 
-        if self.split == 'valid':
+        if self.split == 'validation':
             df = df[df.Fold == valid_idx ]
         elif self.split == 'test':
             df = df[df.Fold == test_idx]

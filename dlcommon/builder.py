@@ -93,6 +93,7 @@ def build_hooks(config):
     hooks_dict['post_forward_fn'] = build_from_config(post_forward_hook_config, HOOKS)
     hooks_dict['get_embeddings_fn'] = build_from_config(get_embeddings_hook_config, HOOKS)
     hooks_dict['distance_fn'] = build_from_config(distance_hook_config, HOOKS)
+    hooks_dict['metric_fn'] = build_from_config(metric_hook_config, HOOKS)
     hooks_dict['loss_fn'] = build_from_config(loss_hook_config, HOOKS)
     hooks_dict['logger_fn'] = build_from_config(logger_hook_config, HOOKS)
     hooks_dict['write_result_fn'] = build_from_config(write_result_hook_config, HOOKS)

@@ -93,8 +93,6 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
         aggregated_outputs = []
         aggregated_labels = []
 
-        aggregated_metric_dict = defaultdict(list)
-
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
             images = data['image'].cuda() #to(device)
@@ -104,8 +102,7 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
                                        data=data, is_train=False)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
                                             data=data, is_train=True)
-            
-            loss = hooks.loss_fn(outputs=outputs, labels=labels.float(), data=data, is_train=False)
+            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=False)
             if isinstance(loss, dict):
                 loss_dict = loss
                 loss = loss_dict['loss']
@@ -116,18 +113,11 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
             f_epoch = epoch + i / total_step
             tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
 
-            metric_dict = hooks.metric_fn(outputs=outputs, labels=labels, data=data, is_train=False, split=split)
-            for key, value in metric_dict.items():
-                aggregated_metric_dict[key].append(value)
-
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
 
-    metric_dict = {key:sum(value)/len(value)
-                   for key, value in aggregated_metric_dict.items()}
 
     log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
-    log_dict.update(metric_dict)
 
     hooks.logger_fn(split=split,
                     outputs=aggregated_outputs,
@@ -135,7 +125,8 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
                     log_dict=log_dict,
                     epoch=epoch)
 
-    return metric_dict['score']  
+    return log_dict['loss']
+
 
 def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
     best_ckpt_score = -100000
@@ -156,30 +147,22 @@ def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
         score_dict = {}
         ckpt_score = None
         # validation
-        # get train data embeddings
+       
         for dataloader in dataloaders:
             split = dataloader['split']
             dataset_mode = dataloader['mode']
-            if split != 'get_embeddings':
+
+            if split != 'validation':
                 continue
 
             dataloader = dataloader['dataloader']
-            embs = get_train_data_embedddings(config, model, split, dataloader, hooks, epoch)
-            
-        #for dataloader in dataloaders:
-            #split = dataloader['split']
-            #dataset_mode = dataloader['mode']
-
-            #if dataset_mode != 'validation':
-            #    continue
-
-            #dataloader = dataloader['dataloader']
-            #score = evaluate_single_epoch(config, model, split, dataloader, hooks,
-            #                              epoch)
-            #score_dict[split] = score
+            score = evaluate_single_epoch(config, model, split, dataloader, hooks,
+                                          epoch)
+            score_dict[split] = score
+            print(score)
             # Use score of the first split
-            #if ckpt_score is None:
-            #    ckpt_score = score
+            if ckpt_score is None:
+                ckpt_score = score
 
         # update learning rate
         if config.scheduler.name == 'ReduceLROnPlateau':
@@ -196,11 +179,11 @@ def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
             print('save snapshot:', epoch, config.scheduler.params.T_max, snapshot_idx)
             dlcommon.utils.save_checkpoint(config, model, optimizer, epoch, keep=None,
                                       name=f'snapshot.{snapshot_idx}')
-        #if ckpt_score > best_ckpt_score:
-        #    best_ckpt_score = ckpt_score
-        #    dlcommon.utils.save_checkpoint(config, model, optimizer, epoch, keep=None,
-        #                              name='best.score')
-        #    dlcommon.utils.copy_last_n_checkpoints(config, 5, 'best.score.{:04d}.pth')
+        if ckpt_score > best_ckpt_score:
+            best_ckpt_score = ckpt_score
+            dlcommon.utils.save_checkpoint(config, model, optimizer, epoch, keep=None,
+                                      name='best.score')
+            dlcommon.utils.copy_last_n_checkpoints(config, 5, 'best.score.{:04d}.pth')
 
         if epoch % config.train.save_checkpoint_epoch == 0:
             dlcommon.utils.save_checkpoint(config, model, optimizer,

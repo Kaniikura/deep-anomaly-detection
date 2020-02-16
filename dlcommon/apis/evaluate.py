@@ -44,6 +44,74 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
 
     return aggregated_embs
 
+def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
+    model.eval()
+
+    batch_size = config.evaluation.batch_size
+    total_size = len(dataloader.dataset)
+    total_step = math.ceil(total_size / batch_size)
+
+    with torch.no_grad():
+        losses = []
+        aggregated_loss_dict = defaultdict(list)
+        aggregated_outputs_dict = defaultdict(list)
+        aggregated_outputs = []
+        aggregated_distances = []
+        aggregated_is_anomalies = []
+
+        tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
+        for i, data in tbar:
+            images = data['image'].cuda() #to(device)
+            labels = data['label'].cuda() #to(device)
+            is_anomalies = data['is_anomaly'].numpy()
+            aggregated_is_anomalies.append(is_anomalies)
+
+            outputs = hooks.forward_fn(model=model, images=images, labels=labels,
+                                       data=data, is_train=False)
+            outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
+                                            data=data, is_train=False)
+            #embs = 
+
+            #distances = 
+            
+            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=False)
+            if isinstance(loss, dict):
+                loss_dict = loss
+                loss = loss_dict['loss']
+            else:
+                loss_dict = {'loss': loss}
+            losses.append(loss.item())
+
+            f_epoch = epoch + i / total_step
+            tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
+
+            for key, value in loss_dict.items():
+                aggregated_loss_dict[key].append(value.item())
+
+    def concatenate(v):
+        # not a list or empty
+        if not isinstance(v, list) or not v:
+            return v
+
+        # ndarray
+        if isinstance(v[0], np.ndarray):
+            return np.concatenate(v, axis=0)
+        
+        return v
+
+    aggregated_is_anomalies = concatenate(aggregated_is_anomalies)
+    log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
+    metric_dict =  hooks.metric_fn(outputs=distances, labels=labels, 
+                                    data=data, is_train=True, split=split)
+    log_dict.update(metric_dict)
+
+    hooks.logger_fn(split=split,
+                    outputs=aggregated_outputs,
+                    labels=aggregated_is_anomalies,
+                    log_dict=log_dict,
+                    epoch=epoch)
+
+    return metric_dict['score']
 
 def evaluate_split(config, model, split, dataloader, hooks):
     model.eval()
@@ -105,6 +173,15 @@ def evaluate_split(config, model, split, dataloader, hooks):
 
 
 def evaluate(config, model, hooks, dataloaders):
+    # get train data embeddings
+    for dataloader in dataloaders:
+        split = dataloader['split']
+        dataset_mode = dataloader['mode']
+        if split != 'get_embeddings':
+            continue
+
+        dataloader = dataloader['dataloader']
+        embs = get_train_data_embedddings(config, model, split, dataloader)
     # validation
     for dataloader in dataloaders:
         split = dataloader['split']
@@ -132,7 +209,7 @@ def run(config):
 
     # load checkpoint
     checkpoint = config.checkpoint
-    last_epoch, step = kvt.utils.load_checkpoint(model, None, checkpoint)
+    last_epoch, step = dlcommon.utils.load_checkpoint(model, None, checkpoint)
 
     # build datasets
     dataloaders = build_dataloaders(config)

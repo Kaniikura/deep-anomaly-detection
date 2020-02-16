@@ -127,7 +127,10 @@ def register_default_hooks():
     HOOKS.register(dlcommon.hooks.DefaultLoggerHook)
     HOOKS.register(dlcommon.hooks.DefaultWriteResultHook)
 
+def register_custom_hooks():
+    HOOKS.register(dlcommon.hooks.CosineDistanceHook)
 
 def initialize():
     register_torch_modules()
     register_default_hooks()
+    register_custom_hooks()
