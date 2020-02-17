@@ -9,25 +9,26 @@ class ForwardHookBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def __call__(self, model, images, labels=None, data=None, is_train=False):
+    def __call__(self, model, images, split, labels=None, data=None):
         pass
 
 
 class DefaultForwardHook(ForwardHookBase):
-    def __call__(self, model, images, labels=None, data=None, is_train=False):
-        #return model(images, labels)
-        return model(images)
-
+    def __call__(self, model, images, split, labels=None, data=None):
+        if split=='train' or split =='validation':
+            return model(images, labels)
+        elif split in ['evaluation', 'get_embeddings', 'inference']:
+            return model.encoder(images)
 
 class PostForwardHookBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def __call__(self, outputs, images=None, labels=None, data=None, is_train=False, train_embs=None):
+    def __call__(self, outputs, images=None, labels=None, data=None, split=None, train_embs=None):
         pass
 
 
 class DefaultPostForwardHook(PostForwardHookBase):
-    def __call__(self, outputs, images=None, labels=None, data=None, is_train=False, train_embs=None):
+    def __call__(self, outputs, images=None, labels=None, data=None, split=None, train_embs=None):
         return outputs
 

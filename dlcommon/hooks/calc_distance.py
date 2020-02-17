@@ -11,19 +11,19 @@ class DistanceHookBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def __call__(self, train_embs, test_embs, is_train, split):
+    def __call__(self, train_embs, test_embs, split):
         pass
 
 
 class DefaultDistanceHook(DistanceHookBase):
-    def __call__(self, train_embs, test_embs, is_train, split):
+    def __call__(self, train_embs, test_embs, split):
         assert isinstance(train_embs, np.ndarray)
         assert isinstance(test_embs,  np.ndarray)
         # euclidean distance
         return np.array([np.linalg.norm(train_embs - a_i, axis=1) for a_i in test_embs])
 
 class CosineDistanceHook(DistanceHookBase):
-    def __call__(self, train_embs, test_embs, is_train, split):
+    def __call__(self, train_embs, test_embs, split):
         assert isinstance(train_embs, np.ndarray)
         assert isinstance(test_embs,  np.ndarray)
         l2_test = np.linalg.norm(test_embs , axis=1)

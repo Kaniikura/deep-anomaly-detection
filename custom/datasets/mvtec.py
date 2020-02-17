@@ -45,11 +45,11 @@ class MetricDataset(Dataset):
         valid_idx = self.idx_fold
         test_idx  = self.num_fold
 
-        if self.split == 'validation':
+        if self.split in ['validation', 'evaluation']:
             df = df[df.Fold == valid_idx ]
         elif self.split == 'test':
             df = df[df.Fold == test_idx]
-        elif self.split == 'train' or 'get_embeddings':
+        elif self.split in ['train' , 'get_embeddings']:
             # remove anomaly samples from train data
             df = df[df['Anomaly'] == 0]
             df = df[(df.Fold != valid_idx) & (df.Fold != test_idx)]

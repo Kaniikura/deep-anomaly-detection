@@ -40,10 +40,10 @@ def train_single_epoch(config, model, split, dataloader,
         images = data['image'].cuda()
         labels = data['label'].cuda()
         outputs = hooks.forward_fn(model=model, images=images, labels=labels,
-                                   data=data, is_train=True)
+                                   data=data, split=split)
         outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
-                                        data=data, is_train=True)
-        loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=True)
+                                        data=data, split=split)
+        loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, split=split)
         
         if isinstance(loss, dict):
             loss_dict = loss
@@ -78,7 +78,7 @@ def train_single_epoch(config, model, split, dataloader,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
     
 
-def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
+def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
     model.eval()
 
     batch_size = config.evaluation.batch_size
@@ -97,10 +97,10 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
             images = data['image'].cuda() #to(device)
             labels = data['label'].cuda() #to(device)
             outputs = hooks.forward_fn(model=model, images=images, labels=labels,
-                                       data=data, is_train=False)
+                                       data=data, split=split)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
-                                            data=data, is_train=True)
-            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=False)
+                                            data=data, split=split)
+            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, split=split)
             if isinstance(loss, dict):
                 loss_dict = loss
                 loss = loss_dict['loss']
@@ -160,7 +160,7 @@ def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
                 continue
 
             dataloader = dataloader['dataloader']
-            score = evaluate_single_epoch(config, model, split, dataloader, hooks,
+            score = validate_single_epoch(config, model, split, dataloader, hooks,
                                           epoch)
             score_dict[split] = score
             print(score)
@@ -268,8 +268,8 @@ def run(config):
     elif 'encoder_lr_ratio' in config.train:
         denom = config.train.encoder_lr_ratio
         base_lr = config.optimizer.params.lr
-        #params = [{'params': model.encoder.parameters(), 'lr': base_lr * encoder_lr_ratio},
-        #          {'params': model.product.parameters(), 'lr': base_lr}]
+        params = [{'params': model.encoder.parameters(), 'lr': base_lr * denom},
+                  {'params': model.product.parameters(), 'lr': base_lr}]
     else:
         params = model.parameters()
     optimizer = build_optimizer(config, params=params)

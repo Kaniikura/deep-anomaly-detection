@@ -120,7 +120,6 @@ def register_default_hooks():
     HOOKS.register(dlcommon.hooks.DefaultLossHook)
     HOOKS.register(dlcommon.hooks.DefaultForwardHook)
     HOOKS.register(dlcommon.hooks.DefaultPostForwardHook)
-    HOOKS.register(dlcommon.hooks.DefaultGetEmbeddingHook)
     HOOKS.register(dlcommon.hooks.DefaultDistanceHook)
     HOOKS.register(dlcommon.hooks.DefaultMetricHook)
     HOOKS.register(dlcommon.hooks.DefaultModelBuilderHook)

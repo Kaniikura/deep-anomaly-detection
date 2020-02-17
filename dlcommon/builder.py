@@ -59,7 +59,6 @@ def build_hooks(config):
     build_model_hook_config = {'name': 'DefaultModelBuilderHook'}
     forward_hook_config = {'name': 'DefaultForwardHook'}
     post_forward_hook_config = {'name': 'DefaultPostForwardHook'}
-    get_embeddings_hook_config = {'name': 'DefaultGetEmbeddingHook'}
     distance_hook_config = {'name': 'DefaultDistanceHook'}
     metric_hook_config = {'name': 'DefaultMetricHook'}
     loss_hook_config = {'name': 'DefaultLossHook'}
@@ -74,8 +73,6 @@ def build_hooks(config):
             forward_hook_config.update(hooks.forward)
         if 'post_forward' in hooks:
             post_forward_hook_config.update(hooks.post_forward)
-        if 'get_embeddings' in hooks:
-            get_embeddings_hook_config.update(hooks.get_embeddings)
         if 'distance' in hooks:
             distance_hook_config.update(hooks.distance)
         if 'metric' in hooks:
@@ -91,7 +88,6 @@ def build_hooks(config):
     hooks_dict['build_model_fn'] = build_from_config(build_model_hook_config, HOOKS)
     hooks_dict['forward_fn'] = build_from_config(forward_hook_config, HOOKS)
     hooks_dict['post_forward_fn'] = build_from_config(post_forward_hook_config, HOOKS)
-    hooks_dict['get_embeddings_fn'] = build_from_config(get_embeddings_hook_config, HOOKS)
     hooks_dict['distance_fn'] = build_from_config(distance_hook_config, HOOKS)
     hooks_dict['metric_fn'] = build_from_config(metric_hook_config, HOOKS)
     hooks_dict['loss_fn'] = build_from_config(loss_hook_config, HOOKS)

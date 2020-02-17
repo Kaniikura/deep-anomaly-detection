@@ -19,7 +19,7 @@ from dlcommon.builder import (
 import dlcommon.utils
 
 
-def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
+def get_train_data_embedddings(config, model, split, dataloader, hooks):
     model.eval()
 
     batch_size = config.evaluation.batch_size
@@ -27,6 +27,7 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
     total_step = math.ceil(total_size / batch_size)
 
     aggregated_embs = []
+    aggregated_labels = []
     tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
     for i, data in tbar:
         images = data['image'].cuda()
@@ -35,16 +36,18 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks, epoch):
 
         with torch.no_grad():
             embs = hooks.forward_fn(model=model, images=images, labels=labels,
-                                    data=data, is_train=False)
-            embs = embs.cpu().detach().numpy()
-            aggregated_embs.append(embs) 
+                                    data=data, split=split)
+            embs = embs.cpu().numpy()
+            aggregated_embs.append(embs)
+            aggregated_labels.append(labels.cpu().numpy()) 
 
     # Putting all embeddings in shape (number of samples, length of one sample embeddings)
     aggregated_embs = np.concatenate(aggregated_embs) 
+    aggregated_labels = np.concatenate(aggregated_labels)
 
-    return aggregated_embs
+    return aggregated_embs, aggregated_labels
 
-def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
+def evaluate_split(config, model, split, dataloader, hooks, train_embs, train_labels):
     model.eval()
 
     batch_size = config.evaluation.batch_size
@@ -57,95 +60,21 @@ def evaluate_single_epoch(config, model, split, dataloader, hooks, epoch):
         aggregated_outputs_dict = defaultdict(list)
         aggregated_outputs = []
         aggregated_distances = []
-        aggregated_is_anomalies = []
+        aggregated_labels = []
 
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
             images = data['image'].cuda() #to(device)
             labels = data['label'].cuda() #to(device)
-            is_anomalies = data['is_anomaly'].numpy()
-            aggregated_is_anomalies.append(is_anomalies)
 
-            outputs = hooks.forward_fn(model=model, images=images, labels=labels,
-                                       data=data, is_train=False)
-            outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
-                                            data=data, is_train=False)
-            #embs = 
-
-            #distances = 
-            
-            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=False)
-            if isinstance(loss, dict):
-                loss_dict = loss
-                loss = loss_dict['loss']
-            else:
-                loss_dict = {'loss': loss}
-            losses.append(loss.item())
-
-            f_epoch = epoch + i / total_step
-            tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
-
-            for key, value in loss_dict.items():
-                aggregated_loss_dict[key].append(value.item())
-
-    def concatenate(v):
-        # not a list or empty
-        if not isinstance(v, list) or not v:
-            return v
-
-        # ndarray
-        if isinstance(v[0], np.ndarray):
-            return np.concatenate(v, axis=0)
-        
-        return v
-
-    aggregated_is_anomalies = concatenate(aggregated_is_anomalies)
-    log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
-    metric_dict =  hooks.metric_fn(outputs=distances, labels=labels, 
-                                    data=data, is_train=True, split=split)
-    log_dict.update(metric_dict)
-
-    hooks.logger_fn(split=split,
-                    outputs=aggregated_outputs,
-                    labels=aggregated_is_anomalies,
-                    log_dict=log_dict,
-                    epoch=epoch)
-
-    return metric_dict['score']
-
-def evaluate_split(config, model, split, dataloader, hooks):
-    model.eval()
-
-    batch_size = config.evaluation.batch_size
-    total_size = len(dataloader.dataset)
-    total_step = math.ceil(total_size / batch_size)
-
-    with torch.no_grad():
-        losses = []
-        aggregated_outputs_dict = defaultdict(list)
-        aggregated_outputs = []
-        aggregated_labels = []
-
-        tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
-        for i, data in tbar:
-            images = data['image'].cuda()
-            labels = data['label'].cuda()
-
-            outputs = hooks.forward_fn(model=model, images=images, labels=labels,
-                                       data=data, is_train=False)
-            outputs = hooks.post_forward_fn(outputs=outputs, images=images, data=data, is_train=False)
-            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, is_train=False)
-            losses.append(loss.item())
-
-            # aggregate outputs
-            if isinstance(outputs, dict):
-                for key, value in outputs.items():
-                    aggregated_outputs_dict[key].append(value.cpu().numpy())
-            else:
-                aggregated_outputs.append(outputs.cpu().numpy())
-
+            embs = hooks.forward_fn(model=model, images=images, labels=labels,
+                                       data=data, split=split)
+            embs = embs.cpu().numpy()
+            distances = hooks.distance_fn(train_embs=train_embs, test_embs=embs, split=split)
+            aggregated_distances.append(distances)
             aggregated_labels.append(labels.cpu().numpy())
 
+
     def concatenate(v):
         # not a list or empty
         if not isinstance(v, list) or not v:
@@ -157,20 +86,13 @@ def evaluate_split(config, model, split, dataloader, hooks):
         
         return v
 
-    aggregated_outputs_dict = {key:concatenate(value) for key, value in aggregated_outputs_dict.items()}
-    aggregated_outputs = concatenate(aggregated_outputs)
     aggregated_labels = concatenate(aggregated_labels)
+    aggregated_distances = concatenate(aggregated_distances)
+    metric_dict =  hooks.metric_fn(distances=aggregated_distances, 
+                                    labels=aggregated_labels, split=split, 
+                                    train_labels=train_labels)
 
-    # list & empty
-    if isinstance(aggregated_outputs, list) and not aggregated_outputs:
-        aggregated_outputs = aggregated_outputs_dict
-    ##
-    #WIP
-    ##
-    score = None 
-
-    return score
-
+    return metric_dict['score']
 
 def evaluate(config, model, hooks, dataloaders):
     # get train data embeddings
@@ -181,17 +103,17 @@ def evaluate(config, model, hooks, dataloaders):
             continue
 
         dataloader = dataloader['dataloader']
-        embs = get_train_data_embedddings(config, model, split, dataloader)
-    # validation
+        embs, labels = get_train_data_embedddings(config, model, split, dataloader, hooks)
+    # evaluation
     for dataloader in dataloaders:
         split = dataloader['split']
         dataset_mode = dataloader['mode']
 
-        if dataset_mode != 'validation':
+        if split != 'evaluation':
             continue
 
         dataloader = dataloader['dataloader']
-        score = evaluate_split(config, model, split, dataloader, hooks)
+        score = evaluate_split(config, model, split, dataloader, hooks, embs, labels)
         print(f'[{split}] score: {score}')
 
 

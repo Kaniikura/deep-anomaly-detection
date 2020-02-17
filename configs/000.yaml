@@ -9,9 +9,11 @@ dataset:
     - mode: 'train'
       split: 'train'
     - mode: 'validation'
-      split: 'get_embeddings'
-    - mode: 'validation'
       split: 'validation'
+    - mode: 'evaluation'
+      split: 'get_embeddings'
+    - mode: 'evaluation'
+      split: 'evaluation'
 
 transform:
   name: 'metric_transform'
@@ -26,6 +28,8 @@ model:
     num_classes: 15
     encoder: 'resnet18'
 
+checkpoint: train_dirs/000/checkpoint/epoch_0005.pth
+
 train:
   dir: 'train_dirs/000'
   log_step: 2
@@ -34,7 +38,7 @@ train:
   num_epochs: 30
   num_keep_checkpoint: 5
   #no_bias_decay: True
-  #encoder_lr_ratio: 0.1
+  encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
@@ -48,7 +52,7 @@ loss:
 optimizer:
   name: 'AdamW'
   params:
-    lr: 0.01
+    lr: 0.001
     weight_decay: 0.1
 
 scheduler:
