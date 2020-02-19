@@ -40,6 +40,6 @@ class DefaultMetricHook(MetricHookBase):
             preds = np.min(distances, axis=1) # min distance is anomaly score
             fpr, tpr, thresholds = metrics.roc_curve(labels, preds)
             auc = metrics.auc(fpr, tpr)
-            res = {'auc': auc, 'thresholds': thresholds}
+            res = {'auc': auc, 'thresholds': thresholds, 'anomaly_score':preds, 'label':labels}
 
         return res

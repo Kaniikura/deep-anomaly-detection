@@ -15,8 +15,7 @@ from dlcommon.initialization import initialize
 from dlcommon.utils import ex
 from dlcommon.apis.train import run as run_train
 from dlcommon.apis.evaluate import run as run_evaluate
-#from dlcommon.apis.inference import run as run_inference
-#from dlcommon.apis.swa import run as run_swa
+from dlcommon.apis.inference import run as run_inference
 
 
 ex.captured_out_filter = apply_backspaces_and_linefeeds
@@ -42,6 +41,14 @@ def evaluate(_run, _config):
     print('evaluate')
     pprint.PrettyPrinter(indent=2).pprint(config)
     run_evaluate(config)
+
+@ex.command
+def inference(_run, _config):
+    config = edict(_config)
+    print('------------------------------------------------')
+    print('inference')
+    pprint.PrettyPrinter(indent=2).pprint(config)
+    run_inference(config)
     
 if __name__ == '__main__':
     torch.multiprocessing.set_sharing_strategy('file_system')

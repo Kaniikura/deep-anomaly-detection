@@ -110,6 +110,8 @@ venv.bak/
 !/train_dirs/.gitkeep
 /train_logs/*
 !/train_logs/.gitkeep
+/outputs/*
+!/outputs/.gitkeep
 
 
 example.ipynb

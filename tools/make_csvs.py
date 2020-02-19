@@ -57,8 +57,12 @@ def create_csvs(data_dir, data_type):
         # saving as csv
         csv_dir = data_dir/data_type/'csvs'
         ensure_folder(csv_dir)
-        df_unsv_learning.to_csv(csv_dir/'unsv_learning.csv')
-        df_metric_learning.to_csv(csv_dir/'metric_learning.csv')
+        df_unsv_learning.to_csv(csv_dir/'unsv_learning.csv',index=False)
+        df_metric_learning.to_csv(csv_dir/'metric_learning.csv',index=False)
+
+        # csv to refer as example at the time of inference
+        df_example = df[['Image', 'Category', 'Anomaly']].copy()
+        df_example.to_csv(csv_dir/'example.csv', index=False)
         
         return
     

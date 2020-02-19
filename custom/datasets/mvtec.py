@@ -17,16 +17,16 @@ class MetricDataset(Dataset):
     def __init__(self,
                  data_dir,
                  split,
+                 folds,
                  transform=None,
-                 idx_fold=0,
-                 num_fold=1,
                  num_classes=15,
                  onehot_enc = False,
                  csv_filename='csvs/metric_learning.csv',
                  **_):
         self.split = split
-        self.idx_fold = idx_fold
-        self.num_fold = num_fold
+        if isinstance(folds, str):
+            folds = [int(i) for i in folds.split(',') if i!='']
+        self.folds = folds
         self.transform = transform
         self.data_dir = data_dir
         self.num_classes = num_classes
@@ -41,18 +41,12 @@ class MetricDataset(Dataset):
         df = pd.read_csv(csv_path)
 
         df = df.fillna('')
-
-        valid_idx = self.idx_fold
-        test_idx  = self.num_fold
-
-        if self.split in ['validation', 'evaluation']:
-            df = df[df.Fold == valid_idx ]
-        elif self.split == 'test':
-            df = df[df.Fold == test_idx]
-        elif self.split in ['train' , 'get_embeddings']:
+        df['OrignalIndex'] = df.index
+        df = df[df.Fold.isin(self.folds)]
+        if self.split in ['train' , 'get_embeddings']:
             # remove anomaly samples from train data
             df = df[df['Anomaly'] == 0]
-            df = df[(df.Fold != valid_idx) & (df.Fold != test_idx)]
+            
 
         targets = sorted(df.Category.unique())
         label_map = {cat:i for i,cat in enumerate(targets)}
@@ -76,11 +70,13 @@ class MetricDataset(Dataset):
             label = label_oh
 
         is_anomaly = selected_row['Anomaly']
+        org_index = selected_row['OrignalIndex']
 
         if self.transform is not None:
             image = self.transform(image)
 
-        return {'image_id': image_id, 'image': image, 'label': label, 'is_anomaly': is_anomaly}
+        return {'image_id': image_id, 'image': image, 'label': label, 
+                'is_anomaly': is_anomaly, 'index':org_index}
 
     def __len__(self):
         return len(self.df)

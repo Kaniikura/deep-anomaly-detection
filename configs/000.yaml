@@ -8,12 +8,19 @@ dataset:
   splits:
     - mode: 'train'
       split: 'train'
+      folds: 1,2,3,4,5,6,7,8,9
     - mode: 'validation'
       split: 'validation'
+      folds: 0,
     - mode: 'evaluation'
       split: 'get_embeddings'
+      folds: 1,2,3,4,5,6,7,8,9
     - mode: 'evaluation'
       split: 'evaluation'
+      folds: 0,
+    - mode: 'inference'
+      split: 'inference'
+      folds: 0,
 
 transform:
   name: 'metric_transform'
@@ -43,6 +50,13 @@ train:
 
 evaluation:
   batch_size: 8
+
+inference:
+  split: 'inference'
+  batch_size: 8
+  output_path: 'outputs/000/'
+  cross_validation: True 
+  reference_csv_filename: 'data/mvtec_ad/csvs/example.csv'
 
 loss:
   name: 'FocalLoss'
