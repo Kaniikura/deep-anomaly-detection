@@ -32,11 +32,11 @@ model:
 #checkpoint: train_dirs/AdaCos/1/checkpoint/epoch_0000.pth
 
 train:
-  dir: 'train_dirs/SSIM-AE'
+  dir: 'train_dirs/L2-AE'
   log_step: 2
   image_log_step: 5
   batch_size: 8
-  num_epochs: 200
+  num_epochs: 100
   num_keep_checkpoint: 5
   save_checkpoint_epoch: 1
 
@@ -46,17 +46,17 @@ evaluation:
 inference:
   split: 'inference'
   batch_size: 8
-  output_path: 'outputs/SSIM-AE/'
+  output_path: 'outputs/L2-AE/'
   cross_validation: True 
   reference_csv_filename: 'data/mvtec_ad/csvs/example.csv'
 
 loss:
-  name: SSIMLoss  
+  name: MSELoss  
 
 optimizer:
   name: 'Adam'
   params:
-    lr: 0.001
+    lr: 0.005
 
 scheduler:
   name: 'StepLR'

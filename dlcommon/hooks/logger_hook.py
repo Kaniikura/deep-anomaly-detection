@@ -13,7 +13,7 @@ class LoggerHookBase(object):
 
     @abc.abstractmethod
     def __call__(self, writer, split, outputs, labels, log_dict,
-                 epoch, step=None, num_steps_in_epoch=None):
+                 epoch, step=None, num_steps_in_epoch=None, is_normalized=True):
         pass
 
 
@@ -27,7 +27,7 @@ def inv_normalize(imgs, mean=(0.485, 0.456, 0.406),
 
 class DefaultLoggerHook(LoggerHookBase):
     def __call__(self, writer, split, outputs, labels, log_dict,
-                 epoch, step=None, num_steps_in_epoch=None):
+                 epoch, step=None, num_steps_in_epoch=None, is_normalized=True):
         if step is not None:
             assert num_steps_in_epoch is not None
             log_step = epoch * 10000 + (step / num_steps_in_epoch) * 10000
@@ -38,7 +38,8 @@ class DefaultLoggerHook(LoggerHookBase):
         for key, value in log_dict.items():
             if key=='images' or key=='gen_images':
                 imgs = log_dict[key]
-                imgs = inv_normalize(imgs)
+                if is_normalized:
+                    imgs = inv_normalize(imgs)
                 grid = torchvision.utils.make_grid(imgs)
                 writer.add_image(f'{split}/{key}', grid, log_step)
             else:
