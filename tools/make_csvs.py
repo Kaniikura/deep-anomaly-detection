@@ -23,12 +23,12 @@ def make_df(data_dir, data_type):
                                               'Category':cat ,
                                               'Anomaly':anml,
                                               'CatAnml': f'{cat}_{anml}',
-                                              'ORG_split':split})
+                                              'OrgSplit':split})
 
             else:
                 for img_path in sd.glob('*.png'):
                     list_of_dicts.append({'Image':img_path, 'Label':sd.name,
-                                          'ORG_split':split})
+                                          'OrgSplit':split})
         _df = pd.DataFrame(list_of_dicts)
 
         return _df
@@ -50,7 +50,7 @@ def create_csvs(data_dir, data_type):
         del df_metric_learning[target]
         
         # take train valid split for unsupervised learning (train/valid data consists of normal data)
-        test_idx = df[df['ORG_split']=='test'].index
+        test_idx = df[df['OrgSplit']=='test'].index
         df_unsv_learning = take_stratified_split(df, target, n_splits=1, valid_size=0.3, test_idx=test_idx)
         del df_unsv_learning[target]
         

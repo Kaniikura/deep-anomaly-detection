@@ -55,6 +55,12 @@ def register_torch_modules():
             continue
         MODELS.register(cls)
 
+    # AutoEncoder models
+    for name, cls in dlcommon.models.autoencoder.__dict__.items():
+        if not callable(cls):
+            continue
+        MODELS.register(cls)
+
     # metric learning models
     for name, cls in dlcommon.models.metric_nets.__dict__.items():
         if not callable(cls):
@@ -80,6 +86,7 @@ def register_torch_modules():
         nn.TripletMarginLoss,
 
         dlcommon.losses.FocalLoss,
+        dlcommon.losses.SSIMloss, 
     ]
 
     for loss in losses:

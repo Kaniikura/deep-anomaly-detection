@@ -13,9 +13,9 @@ import custom   # import all custom modules for registering objects.
 
 from dlcommon.initialization import initialize
 from dlcommon.utils import ex
-from dlcommon.apis.train import run as run_train
-from dlcommon.apis.evaluate import run as run_evaluate
-from dlcommon.apis.inference import run as run_inference
+from dlcommon.apis.metric_learning.train import run as run_train
+from dlcommon.apis.metric_learning.evaluate import run as run_evaluate
+from dlcommon.apis.metric_learning.inference import run as run_inference
 
 
 ex.captured_out_filter = apply_backspaces_and_linefeeds

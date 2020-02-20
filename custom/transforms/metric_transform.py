@@ -13,11 +13,11 @@ def get_training_augmentation(resize_to=(256,256), crop_size=(224, 224)):
     #print('[get_training_augmentation] crop_size:', crop_size) 
 
     train_transform = [
-        albu.RandomScale(scale_limit=(0, 0.1),p=0.75), 
-        albu.Rotate(limit=10, p=0.75),
+        #albu.RandomScale(scale_limit=(0, 0.1),p=0.75), 
+        #albu.Rotate(limit=10, p=0.75),
         albu.Resize(*resize_to),
         #albu.RandomCrop(*crop_size),
-        albu.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=(-0.2, 0.25), p=0.75),
+        #albu.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=(-0.2, 0.25), p=0.75),
         
         albu.Normalize(),
     ]
