@@ -12,13 +12,21 @@ class ForwardHookBase(object):
     def __call__(self, model, images, split, labels=None, data=None):
         pass
 
-
 class DefaultForwardHook(ForwardHookBase):
+    def __call__(self, model, images, split, labels=None, data=None):
+        return
+
+class DMLForwardHook(ForwardHookBase):
     def __call__(self, model, images, split, labels=None, data=None):
         if split=='train' or split =='validation':
             return model(images, labels)
         elif split in ['evaluation', 'get_embeddings', 'inference']:
             return model.encoder(images)
+
+class AEForwardHook(ForwardHookBase):
+    def __call__(self, model, images, split, labels=None, data=None):
+       return model(images)
+
 
 class PostForwardHookBase(object):
     __metaclass__ = abc.ABCMeta

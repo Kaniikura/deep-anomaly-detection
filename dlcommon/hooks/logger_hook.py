@@ -36,7 +36,7 @@ class DefaultLoggerHook(LoggerHookBase):
             log_step = epoch
 
         for key, value in log_dict.items():
-            if key=='images':
+            if key=='images' or key=='gen_images':
                 imgs = log_dict[key]
                 imgs = inv_normalize(imgs)
                 grid = torchvision.utils.make_grid(imgs)

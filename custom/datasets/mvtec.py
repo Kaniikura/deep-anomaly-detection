@@ -81,6 +81,7 @@ class MetricDataset(Dataset):
     def __len__(self):
         return len(self.df)
 
+@dlcommon.DATASETS.register
 class UnsvDataset(Dataset):
     def __init__(self,
                  data_dir,
@@ -94,6 +95,7 @@ class UnsvDataset(Dataset):
         if isinstance(folds, str):
             folds = [int(i) for i in folds.split(',') if i!='']
         self.folds = folds
+        self.target = target
         self.transform = transform
         self.data_dir = data_dir
         self.csv_filename = csv_filename
@@ -107,11 +109,9 @@ class UnsvDataset(Dataset):
 
         df = df.fillna('')
         df['OrignalIndex'] = df.index
-        df = df[df.Fold.isin(self.folds)]
 
-        targets = sorted(df.Category.unique())
-        label_map = {cat:i for i,cat in enumerate(targets)}
-        df['LabelIndex'] = df.Category.apply(lambda x: label_map[x])
+        df = df[df['Category']==self.target]
+        df = df[df['Fold'].isin(self.folds)]
 
         df = df.reset_index()
 
@@ -123,12 +123,6 @@ class UnsvDataset(Dataset):
         image_path = selected_row['Image']
         image_id = image_path.split('/')[-1]
         image = cv2.imread(image_path)
-        
-        label = selected_row['LabelIndex']
-        if self.onehot_enc:
-            label_oh = np.zeros(self.num_classes, dtype=np.int)
-            label_oh[label_idx] = 1
-            label = label_oh
 
         is_anomaly = selected_row['Anomaly']
         org_index = selected_row['OrignalIndex']
@@ -136,7 +130,7 @@ class UnsvDataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
 
-        return {'image_id': image_id, 'image': image, 'label': label, 
+        return {'image_id': image_id, 'image': image,
                 'is_anomaly': is_anomaly, 'index':org_index}
 
     def __len__(self):

@@ -15,6 +15,7 @@ import pretrainedmodels
 import dlcommon.hooks
 import dlcommon.losses
 import dlcommon.models.backbones
+import dlcommon.models.autoencoder
 import dlcommon.models.gans
 import dlcommon.models.metric_nets
 
@@ -86,7 +87,7 @@ def register_torch_modules():
         nn.TripletMarginLoss,
 
         dlcommon.losses.FocalLoss,
-        dlcommon.losses.SSIMloss, 
+        dlcommon.losses.SSIMLoss, 
     ]
 
     for loss in losses:
@@ -134,6 +135,10 @@ def register_default_hooks():
     HOOKS.register(dlcommon.hooks.DefaultWriteResultHook)
 
 def register_custom_hooks():
+    HOOKS.register(dlcommon.hooks.DMLForwardHook)
+    HOOKS.register(dlcommon.hooks.AEForwardHook)
+    HOOKS.register(dlcommon.hooks.DMLMetricHook)
+    HOOKS.register(dlcommon.hooks.AEMetricHook)
     HOOKS.register(dlcommon.hooks.CosineDistanceHook)
 
 def initialize():

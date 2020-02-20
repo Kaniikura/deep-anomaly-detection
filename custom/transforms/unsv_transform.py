@@ -12,10 +12,10 @@ def get_training_augmentation(resize_to=(256,256)):
     print('[get_training_augmentation] resize_to:', resize_to) 
 
     train_transform = [
-        albu.HorizontalFlip(p=0.5),
-        albu.VerticalFlip(p=0.5),
+        #albu.HorizontalFlip(p=0.5),
+        #albu.VerticalFlip(p=0.5),
         albu.Resize(*resize_to),
-        #albu.Normalize(),
+        albu.Normalize(),
     ]
 
     return albu.Compose(train_transform)
@@ -23,12 +23,12 @@ def get_training_augmentation(resize_to=(256,256)):
 def get_test_augmentation(resize_to=(256,256)):
     test_transform = [
         albu.Resize(*resize_to),
-        #albu.Normalize(),
+        albu.Normalize(),
     ]
     return albu.Compose(test_transform)
 
 @dlcommon.TRANSFORMS.register
-def gan_transform(split, resize_to=(256,256), tta=1, **_):
+def unsv_transform(split, resize_to=(256,256), tta=1, **_):
     if isinstance(resize_to, str):
         resize_to = eval(resize_to)
     

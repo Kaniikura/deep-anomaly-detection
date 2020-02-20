@@ -14,18 +14,22 @@ class MetricHookBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def __call__(self, distances, labels, split, train_labels=None):
+    def __call__(self, outputs, labels, split, train_labels=None):
         pass
 
 class DefaultMetricHook(MetricHookBase):
-    def __call__(self, distances, labels, split, train_labels=None):
+    def __call__(self, outputs, labels, split, train_labels=None):
+        return
+
+class DMLMetricHook(MetricHookBase):
+    def __call__(self, outputs, labels, split, train_labels=None):
         if split == 'evaluation':
             # multi-label classification
             if isinstance(labels, torch.Tensor):
                 labels = labels.numpy()
-            assert len(distances.shape) == 2
+            assert len(outputs.shape) == 2
             assert train_labels is not None
-            pred_ids = np.argmin(distances, axis=1) # get the id of the closest training data
+            pred_ids = np.argmin(outputs, axis=1) # get the id of the closest training data
             preds = train_labels[pred_ids]
             correct = (preds==labels).sum()
             total = len(labels)
@@ -36,10 +40,14 @@ class DefaultMetricHook(MetricHookBase):
             # Binary classification of anomaly or normal
             if isinstance(labels, torch.Tensor):
                 labels = labels.numpy()
-            assert len(distances.shape) == 2
-            preds = np.min(distances, axis=1) # min distance is anomaly score
+            assert len(outputs.shape) == 2
+            preds = np.min(outputs, axis=1) # min distance is anomaly score
             fpr, tpr, thresholds = metrics.roc_curve(labels, preds)
             auc = metrics.auc(fpr, tpr)
             res = {'auc': auc, 'thresholds': thresholds, 'anomaly_score':preds, 'label':labels}
 
         return res
+
+class AEMetricHook(MetricHookBase):
+    def __call__(self, outputs, labels, split, train_labels=None):
+        return 

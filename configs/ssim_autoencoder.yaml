@@ -1,7 +1,8 @@
 dataset:
-  name: 'AutoEncoderDataset'
+  name: 'UnsvDataset'
   params:
     data_dir: 'data/mvtec_ad'
+    target: 'bottle'
     csv_filename: 'csvs/unsv_learning.csv.csv'
 
   splits:
@@ -19,29 +20,22 @@ dataset:
       folds: 2,
 
 transform:
-  name: 'metric_transform'
+  name: 'unsv_transform'
   num_preprocessor: 8
   params:
-    resize_to: (256, 256)
+    resize_to: (128, 128)
 
 model:
-  name: 'AdaCos'
-  params:
-    num_features: 512
-    num_classes: 15
-    encoder: 'resnet18'
+  name: 'AutoEncoder'
 
-checkpoint: train_dirs/AdaCos/1/checkpoint/epoch_0000.pth
+#checkpoint: train_dirs/AdaCos/1/checkpoint/epoch_0000.pth
 
 train:
-  dir: 'train_dirs/AdaCos/1'
+  dir: 'train_dirs/SSIM-AE/1'
   log_step: 2
   batch_size: 8
-  gradient_accumulation_step: 1
-  num_epochs: 2
+  num_epochs: 100
   num_keep_checkpoint: 5
-  #no_bias_decay: True
-  encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
@@ -55,15 +49,12 @@ inference:
   reference_csv_filename: 'data/mvtec_ad/csvs/example.csv'
 
 loss:
-  name: 'FocalLoss'
-  params: 
-    gamma: 2
-
+  name: 'SSIMLoss'
+  
 optimizer:
   name: 'Adam'
   params:
     lr: 0.001
-    weight_decay: 0.1
 
 scheduler:
   name: 'StepLR'
@@ -71,6 +62,8 @@ scheduler:
     step_size : 1
 
 hooks:
-  distance:
-    name: 'CosineDistanceHook'
+  forward:
+    name: 'AEForwardHook'
+  metric:
+    name: 'AEMetricHook'
 

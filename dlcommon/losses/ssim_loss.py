@@ -263,6 +263,6 @@ class MS_SSIM(torch.nn.Module):
 
 
 ssim_module = SSIM(data_range=1.0, size_average=True, channel=3)
-def SSIMloss(output, target):
+def SSIMLoss(output, target):
     loss = 1 - ssim_module(output, target)
     return loss
