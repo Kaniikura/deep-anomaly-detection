@@ -4,7 +4,7 @@ class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
         self.cv1 = nn.Sequential(
-            nn.Conv2d(1, 32, 4, 2, 1),
+            nn.Conv2d(3, 32, 4, 2, 1),
             nn.ReLU(),
         )
         self.cv2 = nn.Sequential(
@@ -94,8 +94,8 @@ class Decoder(nn.Module):
         )
         self.up7 =  nn.Upsample(size=(128, 128), mode='bilinear', align_corners=True)
         self.cv9 = nn.Sequential(
-            nn.Conv2d(32, 1, 7, 1, 3),
-            nn.Sigmoid(),
+            nn.Conv2d(32, 3, 7, 1, 3),
+            nn.Tanh(),
         )
         
     def forward(self, input):
@@ -119,10 +119,10 @@ class Decoder(nn.Module):
         return output
     
 class AutoEncoder(nn.Module):
-    def __init__(self, encoder, decoder):
+    def __init__(self):
         super(AutoEncoder, self).__init__()
-        self.encoder = encoder
-        self.decoder = decoder
+        self.encoder = Encoder()
+        self.decoder = Decoder()
     def forward(self, input):
         code = self.encoder(input)
         output = self.decoder(code)

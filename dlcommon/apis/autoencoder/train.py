@@ -42,7 +42,7 @@ def train_single_epoch(config, model, split, dataloader,
                                    data=data, split=split)
         outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=None,
                                         data=data, split=split)
-        loss = hooks.loss_fn(outputs=outputs, labels=None, data=data, split=split)
+        loss = hooks.loss_fn(outputs=outputs, targets=images, data=data, split=split)
         
         if isinstance(loss, dict):
             loss_dict = loss
@@ -66,7 +66,7 @@ def train_single_epoch(config, model, split, dataloader,
         tbar.set_postfix(lr=optimizer.param_groups[-1]['lr'],
                          loss=loss.item())
 
-        if i % 10 == 0:
+        if i % config.train.image_log_step == 0:
             log_dict['images'] = images.cpu()
             log_dict['gen_images'] = outputs.detach().cpu()
         
@@ -86,17 +86,15 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
         aggregated_loss_dict = defaultdict(list)
         aggregated_outputs_dict = defaultdict(list)
         aggregated_outputs = []
-        aggregated_labels = []
 
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
             images = data['image'].cuda() #to(device)
-            labels = data['label'].cuda() #to(device)
-            outputs = hooks.forward_fn(model=model, images=images, labels=labels,
+            outputs = hooks.forward_fn(model=model, images=images, labels=None,
                                        data=data, split=split)
-            outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
+            outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=None,
                                             data=data, split=split)
-            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, split=split)
+            loss = hooks.loss_fn(outputs=outputs, targets=images, data=data, split=split)
             if isinstance(loss, dict):
                 loss_dict = loss
                 loss = loss_dict['loss']
@@ -111,9 +109,8 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
             log_dict = {}
-            if i % 10 == 0:
-                log_dict.update({'images':images.cpu()})
-            hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
+            
+            hooks.logger_fn(split=split, outputs=outputs, labels=None, log_dict=log_dict,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
 
     log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
@@ -121,7 +118,7 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
     hooks.logger_fn(split=split,
                     outputs=aggregated_outputs,
-                    labels=aggregated_labels,
+                    labels=None,
                     log_dict=log_dict,
                     epoch=epoch)
 

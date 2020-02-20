@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 
@@ -261,8 +262,11 @@ class MS_SSIM(torch.nn.Module):
                         data_range=self.data_range, weights=self.weights, 
                         K=self.K, nonnegative_ssim=self.nonnegative_ssim)
 
+class SSIMLoss(nn.Module):
+    def __init__(self):
+        super(SSIMLoss, self).__init__()
+        self.ssim_module = SSIM(data_range=1.0, size_average=True, channel=3)
 
-ssim_module = SSIM(data_range=1.0, size_average=True, channel=3)
-def SSIMLoss(output, target):
-    loss = 1 - ssim_module(output, target)
-    return loss
+    def forward(self, input, target):
+        loss = 1 - self.ssim_module(input, target)
+        return loss

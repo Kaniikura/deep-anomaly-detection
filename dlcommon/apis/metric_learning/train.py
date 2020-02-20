@@ -43,7 +43,7 @@ def train_single_epoch(config, model, split, dataloader,
                                    data=data, split=split)
         outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
                                         data=data, split=split)
-        loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, split=split)
+        loss = hooks.loss_fn(outputs=outputs, targets=labels, data=data, split=split)
         
         if isinstance(loss, dict):
             loss_dict = loss
@@ -100,7 +100,7 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
                                        data=data, split=split)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
                                             data=data, split=split)
-            loss = hooks.loss_fn(outputs=outputs, labels=labels, data=data, split=split)
+            loss = hooks.loss_fn(outputs=outputs, targets=labels, data=data, split=split)
             if isinstance(loss, dict):
                 loss_dict = loss
                 loss = loss_dict['loss']
