@@ -4,7 +4,7 @@ dataset:
   name: 'UnsvDataset'
   params:
     data_dir: 'data/mvtec_ad'
-    target: 'bottle'
+    target: 'grid'
     csv_filename: 'csvs/unsv_learning.csv'
 
   splits:
