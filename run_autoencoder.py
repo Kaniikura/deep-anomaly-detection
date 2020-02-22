@@ -14,8 +14,7 @@ import custom   # import all custom modules for registering objects.
 from dlcommon.initialization import initialize
 from dlcommon.utils import ex
 from dlcommon.apis.autoencoder.train import run as run_train
-#from dlcommon.apis.metric_learning.evaluate import run as run_evaluate
-#from dlcommon.apis.metric_learning.inference import run as run_inference
+from dlcommon.apis.autoencoder.inference import run as run_inference
 
 
 ex.captured_out_filter = apply_backspaces_and_linefeeds
@@ -48,7 +47,7 @@ def inference(_run, _config):
     print('------------------------------------------------')
     print('inference')
     pprint.PrettyPrinter(indent=2).pprint(config)
-    #run_inference(config)
+    run_inference(config)
     
 if __name__ == '__main__':
     torch.multiprocessing.set_sharing_strategy('file_system')

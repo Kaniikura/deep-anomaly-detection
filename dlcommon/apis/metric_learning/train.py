@@ -129,7 +129,7 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
                     log_dict=log_dict,
                     epoch=epoch)
 
-    return log_dict['loss']
+    return -1*log_dict['loss']
 
 
 def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):

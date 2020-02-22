@@ -1,3 +1,5 @@
+seed: 686653144
+
 dataset:
   name: 'UnsvDataset'
   params:
@@ -29,7 +31,7 @@ transform:
 model:
   name: 'AutoEncoder'
 
-#checkpoint: train_dirs/AdaCos/1/checkpoint/epoch_0000.pth
+checkpoint: train_dirs/SSIM-AE/checkpoint/best.score.pth
 
 train:
   dir: 'train_dirs/SSIM-AE'
