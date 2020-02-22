@@ -1,25 +1,29 @@
+data: 
+  name: 'mvtec_ad'
+  num_classes: 15
+
+num_folds: 10
+fold_idx: 9
+
+model_name: 'AdaCos'
+
 dataset:
   name: 'MetricDataset'
   params:
-    data_dir: 'data/mvtec_ad'
+    data_dir: 'data'
     csv_filename: 'csvs/metric_learning.csv'
 
   splits:
     - mode: 'train'
       split: 'train'
-      folds: 0,2,3,4,5,6,7,8,9
     - mode: 'validation'
       split: 'validation'
-      folds: 1,
     - mode: 'evaluation'
       split: 'get_embeddings'
-      folds: 0,2,3,4,5,6,7,8,9
     - mode: 'evaluation'
       split: 'evaluation'
-      folds: 1,
     - mode: 'inference'
       split: 'inference'
-      folds: 1,
 
 transform:
   name: 'metric_transform'
@@ -28,22 +32,21 @@ transform:
     resize_to: (256, 256)
 
 model:
-  name: 'AdaCos'
   params:
     num_features: 512
     num_classes: 15
     encoder: 'resnet18'
 
-checkpoint: train_dirs/AdaCos/1/checkpoint/epoch_0000.pth
+checkpoint: checkpoint/best.score.pth
 
 train:
-  dir: 'train_dirs/AdaCos/1'
+  dir: 'train_dirs'
   log_step: 2
   batch_size: 8
   gradient_accumulation_step: 1
   num_epochs: 2
-  num_keep_checkpoint: 5
-  #no_bias_decay: True
+  num_keep_checkpoint: 2
+  no_bias_decay: False
   encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
@@ -53,9 +56,9 @@ evaluation:
 inference:
   split: 'inference'
   batch_size: 8
-  output_path: 'outputs/AdaCos/'
+  output_path: 'outputs'
   cross_validation: True 
-  reference_csv_filename: 'data/mvtec_ad/csvs/example.csv'
+  reference_csv_filename: 'csvs/example.csv'
 
 loss:
   name: 'FocalLoss'
@@ -74,6 +77,10 @@ scheduler:
     step_size : 1
 
 hooks:
+  forward:
+    name: 'DMLForwardHook'
   distance:
     name: 'CosineDistanceHook'
+  metric: 
+    name: 'DMLMetricHook'
 

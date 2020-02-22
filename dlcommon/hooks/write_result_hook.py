@@ -14,19 +14,17 @@ class WriteResultHookBase(object):
 
     @abc.abstractmethod
     def __call__(self, split, output_path, outputs, indices, labels=None, data=None,
-                 is_train=False, csv_name=None, reference_csv_filename=None):
+                 is_train=False, reference_csv_filename=None):
         pass
 
 
 class DefaultWriteResultHook(WriteResultHookBase):
     def __call__(self, split, output_path, outputs, indices ,labels=None, data=None,
-                 is_train=False, csv_name=None, reference_csv_filename=None):
+                 is_train=False, reference_csv_filename=None):
         output_path = Path(output_path)
         if not output_path.is_dir():
             output_path.mkdir(parents=True)
-        if csv_name is None:
-            csv_name = 'example.csv'
-        csv_path = output_path/csv_name
+        csv_path = output_path/'result.csv'
 
         if csv_path.exists(): #　overwrite existing csv
             df = pd.read_csv(csv_path)
@@ -38,7 +36,7 @@ class DefaultWriteResultHook(WriteResultHookBase):
             df['AnomalyScore'] = np.nan
         
         df.loc[indices,'AnomalyScore'] = outputs['anomaly_score']
-        df.to_csv(csv_path)
+        df.to_csv(csv_path, index=False)
 
         return
 

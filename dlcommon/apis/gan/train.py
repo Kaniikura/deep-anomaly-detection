@@ -1,3 +1,23 @@
+def build_model(self):
+
+    self.G = Generator(self.batch_size,self.imsize, self.z_dim, self.g_conv_dim).cuda()
+    self.D = Discriminator(self.batch_size,self.imsize, self.d_conv_dim).cuda()
+    if self.parallel:
+        self.G = nn.DataParallel(self.G)
+        self.D = nn.DataParallel(self.D)
+
+    # Loss and optimizer
+    # self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
+    self.g_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.G.parameters()), self.g_lr, [self.beta1, self.beta2])
+    self.d_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.D.parameters()), self.d_lr, [self.beta1, self.beta2])
+
+    self.c_loss = torch.nn.CrossEntropyLoss()
+    # print networks
+    print(self.G)
+    print(self.D)
+
+
+
 import os
 import math
 from collections import defaultdict
@@ -22,28 +42,128 @@ from dlcommon.builder import (
 )
 import dlcommon.utils
 
+def tensor2var(x, grad=False):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x, requires_grad=grad)
 
 def prepare_directories(config):
     os.makedirs(os.path.join(config.train.dir, 'checkpoint'), exist_ok=True)
 
-
-def train_single_epoch(config, model, split, dataloader,
-                       hooks, optimizer, scheduler, epoch):
-    model.train()
-
+def train_single_epoch(config, G, D, split, dataloader,
+            hooks, optimizers, scheduler, epoch):
     batch_size = config.train.batch_size
     total_size = len(dataloader.dataset)
     total_step = math.ceil(total_size / batch_size)
 
+    # Fixed input for debugging
+    fixed_z = tensor2var(torch.randn(batch_size, config.train.z_dim))
+
     tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
     for i, data in tbar:
-        images = data['image'].cuda()
-        labels = data['label'].cuda()
-        outputs = hooks.forward_fn(model=model, images=images, labels=labels,
+        # ================== Train D ================== #
+        D.train()
+        G.train()
+
+        real_images, _ = data['image'].cuda()
+
+        # Compute loss with real images
+        # dr1, dr2, dr3, df1, df2, df3, gf1, gf2, gf3 are attention scores
+        real_images = tensor2var(real_images)
+        d_out_real,dr1,dr2, d3 = D(real_images)
+        if config.train.adv_loss == 'wgan-gp':
+            d_loss_real = - torch.mean(d_out_real)
+        elif config.train.adv_loss == 'hinge':
+            d_loss_real = torch.nn.ReLU()(1.0 - d_out_real).mean()
+
+        # apply Gumbel Softmax
+        z = tensor2var(torch.randn(real_images.size(0), config.train.z_dim))
+        fake_images,gf1,gf2,gf3 = G(z)
+        d_out_fake,df1,df2,df3 = D(fake_images)
+
+        if config.train.adv_loss == 'wgan-gp':
+            d_loss_fake = d_out_fake.mean()
+        elif config.train.adv_loss == 'hinge':
+            d_loss_fake = torch.nn.ReLU()(1.0 + d_out_fake).mean()
+
+
+        # Backward + Optimize
+        d_loss = d_loss_real + d_loss_fake
+        optimizers['G'].zero_grad()
+        optimizers['D'].zero_grad()
+        d_loss.backward()
+        optimizers['D'].step()
+
+
+        if config.train.adv_loss == 'wgan-gp':
+            # Compute gradient penalty
+            alpha = torch.rand(real_images.size(0), 1, 1, 1).cuda().expand_as(real_images)
+            interpolated = Variable(alpha * real_images.data + (1 - alpha) * fake_images.data, requires_grad=True)
+            out,_,_,_ = D(interpolated)
+
+            grad = torch.autograd.grad(outputs=out,
+                                        inputs=interpolated,
+                                        grad_outputs=torch.ones(out.size()).cuda(),
+                                        retain_graph=True,
+                                        create_graph=True,
+                                        only_inputs=True)[0]
+
+            grad = grad.view(grad.size(0), -1)
+            grad_l2norm = torch.sqrt(torch.sum(grad ** 2, dim=1))
+            d_loss_gp = torch.mean((grad_l2norm - 1) ** 2)
+
+            # Backward + Optimize
+            d_loss = self.lambda_gp * d_loss_gp
+
+            self.reset_grad()
+            d_loss.backward()
+            self.d_optimizer.step()
+
+        # ================== Train G and gumbel ================== #
+        # Create random noise
+        z = tensor2var(torch.randn(real_images.size(0), self.z_dim))
+        fake_images,_,_ = self.G(z)
+
+        # Compute loss with fake images
+        g_out_fake,_,_ = self.D(fake_images)  # batch x n
+        if self.adv_loss == 'wgan-gp':
+            g_loss_fake = - g_out_fake.mean()
+        elif self.adv_loss == 'hinge':
+            g_loss_fake = - g_out_fake.mean()
+
+        self.reset_grad()
+        g_loss_fake.backward()
+        self.g_optimizer.step()
+
+
+        # Print out log info
+        if (step + 1) % self.log_step == 0:
+            elapsed = time.time() - start_time
+            elapsed = str(datetime.timedelta(seconds=elapsed))
+            print("Elapsed [{}], G_step [{}/{}], D_step[{}/{}], d_out_real: {:.4f}, "
+                    " ave_gamma_l3: {:.4f}, ave_gamma_l4: {:.4f}".
+                    format(elapsed, step + 1, self.total_step, (step + 1),
+                            self.total_step , d_loss_real.data[0],
+                            self.G.attn1.gamma.mean().data[0], self.G.attn2.gamma.mean().data[0] ))
+
+        # Sample images
+        if (step + 1) % self.sample_step == 0:
+            fake_images,_,_= self.G(fixed_z)
+            save_image(denorm(fake_images.data),
+                        os.path.join(self.sample_path, '{}_fake.png'.format(step + 1)))
+
+        if (step+1) % model_save_step==0:
+            torch.save(self.G.state_dict(),
+                        os.path.join(self.model_save_path, '{}_G.pth'.format(step + 1)))
+            torch.save(self.D.state_dict(),
+                        os.path.join(self.model_save_path, '{}_D.pth'.format(step + 1)))
+
+   
+        outputs = hooks.forward_fn(model=model, images=images, labels=None,
                                    data=data, split=split)
-        outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
+        outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=None,
                                         data=data, split=split)
-        loss = hooks.loss_fn(outputs=outputs, targets=labels, data=data, split=split)
+        loss = hooks.loss_fn(outputs=outputs, targets=images, data=data, split=split)
         
         if isinstance(loss, dict):
             loss_dict = loss
@@ -53,29 +173,26 @@ def train_single_epoch(config, model, split, dataloader,
 
         loss.backward()
         
-        if config.train.gradient_accumulation_step is None:
-            optimizer.step()
-            optimizer.zero_grad()
-        elif (i+1) % config.train.gradient_accumulation_step == 0:
-            optimizer.step()
-            optimizer.zero_grad()
+        optimizer.step()
+        optimizer.zero_grad()
         
         if config.scheduler.name == 'OneCycleLR':
             scheduler.step()
 
         log_dict = {key:value.item() for key, value in loss_dict.items()}
-        log_dict['lr'] = optimizer.param_groups[-1]['lr']
+        log_dict['lr'] = optimizer.param_groups[0]['lr']
 
         f_epoch = epoch + i / total_step
         tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
         tbar.set_postfix(lr=optimizer.param_groups[-1]['lr'],
                          loss=loss.item())
 
-        if i % 10 == 0:
+        if i % config.train.image_log_step == 0:
             log_dict['images'] = images.cpu()
+            log_dict['gen_images'] = outputs.detach().cpu()
         
-        hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
-                        epoch=epoch, step=i, num_steps_in_epoch=total_step)
+        hooks.logger_fn(split=split, outputs=outputs, labels=None, log_dict=log_dict,
+                        epoch=epoch, step=i, num_steps_in_epoch=total_step, is_normalized=False)
     
 
 def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
@@ -90,17 +207,15 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
         aggregated_loss_dict = defaultdict(list)
         aggregated_outputs_dict = defaultdict(list)
         aggregated_outputs = []
-        aggregated_labels = []
 
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
             images = data['image'].cuda() #to(device)
-            labels = data['label'].cuda() #to(device)
-            outputs = hooks.forward_fn(model=model, images=images, labels=labels,
+            outputs = hooks.forward_fn(model=model, images=images, labels=None,
                                        data=data, split=split)
-            outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
+            outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=None,
                                             data=data, split=split)
-            loss = hooks.loss_fn(outputs=outputs, targets=labels, data=data, split=split)
+            loss = hooks.loss_fn(outputs=outputs, targets=images, data=data, split=split)
             if isinstance(loss, dict):
                 loss_dict = loss
                 loss = loss_dict['loss']
@@ -115,9 +230,8 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
             log_dict = {}
-            if i % 10 == 0:
-                log_dict.update({'images':images.cpu()})
-            hooks.logger_fn(split=split, outputs=outputs, labels=labels, log_dict=log_dict,
+            
+            hooks.logger_fn(split=split, outputs=outputs, labels=None, log_dict=log_dict,
                         epoch=epoch, step=i, num_steps_in_epoch=total_step)
 
     log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
@@ -125,7 +239,7 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
     hooks.logger_fn(split=split,
                     outputs=aggregated_outputs,
-                    labels=aggregated_labels,
+                    labels=None,
                     log_dict=log_dict,
                     epoch=epoch)
 
@@ -211,31 +325,6 @@ def to_data_parallel(config, model, optimizer):
     return torch.nn.DataParallel(model), optimizer
 
 
-def group_weight(module):
-    group_decay = []
-    group_no_decay = []
-    for m in module.modules():
-        if isinstance(m, nn.Linear):
-            group_decay.append(m.weight)
-            if m.bias is not None:
-                group_no_decay.append(m.bias)
-        elif isinstance(m, Conv2d):
-            group_decay.append(m.weight)
-            if m.bias is not None:
-                group_no_decay.append(m.bias)
-        elif isinstance(m, _BatchNorm):
-            if m.weight is not None:
-                group_no_decay.append(m.weight)
-            if m.bias is not None:
-                group_no_decay.append(m.bias)
-        elif isinstance(m, GroupNorm):
-            if m.weight is not None:
-                group_no_decay.append(m.weight)
-            if m.bias is not None:
-                group_no_decay.append(m.bias)
-    assert len(list(module.parameters())) == len(group_decay) + len(group_no_decay)
-    return group_decay, group_no_decay
-
 
 def run(config):
     # prepare directories
@@ -252,25 +341,7 @@ def run(config):
     hooks.loss_fn = lambda **kwargs: loss_fn(loss_fn=loss, **kwargs)
     
     # build optimizer
-    if 'no_bias_decay' in config.train and config.train.no_bias_decay:
-        if 'encoder_lr_ratio' in config.train:
-            encoder_lr_ratio = config.train.encoder_lr_ratio
-            group_decay_encoder, group_no_decay_encoder = group_weight(model.encoder)
-            base_lr = config.optimizer.params.lr
-            params = [{'params': model.product.parameters(), 'lr': base_lr},
-                      {'params': group_decay_encoder, 'lr': base_lr * encoder_lr_ratio},
-                      {'params': group_no_decay_encoder, 'lr': base_lr * encoder_lr_ratio, 'weight_decay': 0.0}]
-        else:
-            group_decay, group_no_decay = group_weight(model)
-            params = [{'params': group_decay},
-                      {'params': group_no_decay, 'weight_decay': 0.0}]
-    elif 'encoder_lr_ratio' in config.train:
-        denom = config.train.encoder_lr_ratio
-        base_lr = config.optimizer.params.lr
-        params = [{'params': model.encoder.parameters(), 'lr': base_lr * denom},
-                  {'params': model.product.parameters(), 'lr': base_lr}]
-    else:
-        params = model.parameters()
+    params = model.parameters()
     optimizer = build_optimizer(config, params=params)
 
     model = model.cuda()

@@ -88,7 +88,7 @@ def inference_split(config, model, split, dataloader, hooks, train_embs, train_l
     aggregated_labels = concatenate(aggregated_labels)
     aggregated_indices = concatenate(aggregated_indices)
     aggregated_distances = concatenate(aggregated_distances)
-    metric_dict =  hooks.metric_fn(distances=aggregated_distances, 
+    metric_dict =  hooks.metric_fn(inputs=aggregated_distances, 
                                     labels=aggregated_labels, split=split, 
                                     train_labels=train_labels)
 
@@ -120,8 +120,7 @@ def inference(config, model, hooks, dataloaders):
 
     
     hooks.write_result_fn(split, config.inference.output_path, outputs=outputs_dict, 
-                         indices=indices, csv_name=f'{config.model.name}.csv',
-                         reference_csv_filename = config.inference.reference_csv_filename)
+                         indices=indices, reference_csv_filename = config.inference.reference_csv_filename)
 
 
 def run(config):

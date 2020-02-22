@@ -88,7 +88,7 @@ def evaluate_split(config, model, split, dataloader, hooks, train_embs, train_la
 
     aggregated_labels = concatenate(aggregated_labels)
     aggregated_distances = concatenate(aggregated_distances)
-    metric_dict =  hooks.metric_fn(distances=aggregated_distances, 
+    metric_dict =  hooks.metric_fn(inputs=aggregated_distances, 
                                     labels=aggregated_labels, split=split, 
                                     train_labels=train_labels)
 
