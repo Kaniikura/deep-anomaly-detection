@@ -30,7 +30,7 @@ def prepare_directories(config):
 def train_single_epoch(config, model, split, dataloader,
                        hooks, optimizer, scheduler, epoch):
     model.train()
-
+    
     batch_size = config.train.batch_size
     total_size = len(dataloader.dataset)
     total_step = math.ceil(total_size / batch_size)

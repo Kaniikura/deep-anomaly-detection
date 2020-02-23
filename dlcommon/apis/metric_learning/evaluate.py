@@ -33,7 +33,6 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks):
         images = data['image'].cuda()
         labels = data['label'].cuda()
         
-
         with torch.no_grad():
             embs = hooks.forward_fn(model=model, images=images, labels=labels,
                                     data=data, split=split)

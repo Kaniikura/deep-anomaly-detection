@@ -157,7 +157,7 @@ def build_encoder(backbone):
             encoder = PretrainedModelsResNextEncoder(backbone) # pytorch-pretrainedmodels
         else: 
             encoder = ResNetEncoder(backbone) # torchvision models
-        encoder.out_shape = BACKBONE_OUT_SHAPE[backbone_name]
+        encoder.out_channel = BACKBONE_OUT_SHAPE[backbone_name]
     elif backbone_name.startswith('resnet'):
         encoder = ResNetEncoder(backbone)
     elif backbone_name.startswith('densenet'):
@@ -166,33 +166,33 @@ def build_encoder(backbone):
         encoder = EfficientNetEncoder(**efficient_net_encoders[backbone_name]['params'])
         settings = efficient_net_encoders[backbone_name]['pretrained_settings']['imagenet']
         encoder.load_state_dict(model_zoo.load_url(settings['url']))
-        encoder.out_shape = efficient_net_encoders[backbone_name]['out_shapes']
+        encoder.out_channel = efficient_net_encoders[backbone_name]['out_channel']
 
-    if backbone_name in BACKBONE_OUT_SHAPE:
-        encoder.out_shape = BACKBONE_OUT_SHAPE[backbone_name]
+    if backbone_name in BACKBONE_OUT_CHANNEL:
+        encoder.out_channel = BACKBONE_OUT_CHANNEL[backbone_name]
 
     return encoder
 
 # Input assumes image　shape (3, 256, 256),
     # If you use a different size , modify the last two values as ceil(image_size/32).
-BACKBONE_OUT_SHAPE = {
-    'resnet18': (512, 8, 8),
-    'resnet34': (512, 8, 8),
-    'resnet50': (2048, 8, 8),
-    'resnet101': (2048, 8, 8),
-    'resnet152': (2048, 8, 8),
-    'resnext50_32x4d_wsl': (2048, 8, 8),
-    'resnext101_32x4d_wsl': (2048, 8, 8),            
-    'resnext101_64x4d_wsl': (2048, 8, 8),  
+BACKBONE_OUT_CHANNEL = {
+    'resnet18': 512,
+    'resnet34': 512,
+    'resnet50': 2048,
+    'resnet101': 2048,
+    'resnet152': 2048,
+    'resnext50_32x4d_wsl': 2048,
+    'resnext101_32x4d_wsl': 2048,            
+    'resnext101_64x4d_wsl': 2048,  
     ## WIP
-    #'resnext101_32x8d_wsl': (2048, 8, 8), 
-    #'resnext101_32x16d_wsl': (2048, 8, 8),
-    #'resnext101_32x32d_wsl': (2048, 8, 8),
-    #'resnext101_32x48d_wsl': (2048, 8, 8),
-    'densenet121': (1024, 8, 8),
-    'densenet169': (1664, 8, 8),
-    'densenet201': (1920, 8, 8),
-    'densenet161': (2208, 8, 8),
+    #'resnext101_32x8d_wsl': 2048, 
+    #'resnext101_32x16d_wsl': 2048,
+    #'resnext101_32x32d_wsl': 2048,
+    #'resnext101_32x48d_wsl': 2048,
+    'densenet121': 1024,
+    'densenet169': 1664,
+    'densenet201': 1920,
+    'densenet161': 2208,
 }
 
 
@@ -212,7 +212,7 @@ def _get_pretrained_settings(encoder):
 efficient_net_encoders = {
     'efficientnet-b0': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (320, 112, 40, 24, 32),
+        'out_channel': (320, 112, 40, 24, 32),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b0'),
         'params': {
             'skip_connections': [3, 5, 9],
@@ -221,7 +221,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b1': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (320, 112, 40, 24, 32),
+        'out_channel': (320, 112, 40, 24, 32),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b1'),
         'params': {
             'skip_connections': [5, 8, 16],
@@ -230,7 +230,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b2': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (352, 120, 48, 24, 32),
+        'out_channel': (352, 120, 48, 24, 32),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b2'),
         'params': {
             'skip_connections': [5, 8, 16],
@@ -239,7 +239,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b3': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (384, 136, 48, 32, 40),
+        'out_channel': (384, 136, 48, 32, 40),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b3'),
         'params': {
             'skip_connections': [5, 8, 18],
@@ -248,7 +248,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b4': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (448, 160, 56, 32, 48),
+        'out_channel': (448, 160, 56, 32, 48),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b4'),
         'params': {
             'skip_connections': [6, 10, 22],
@@ -257,7 +257,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b5': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (512, 176, 64, 40, 48),
+        'out_channel': (512, 176, 64, 40, 48),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b5'),
         'params': {
             'skip_connections': [8, 13, 27],
@@ -266,7 +266,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b6': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (576, 200, 72, 40, 56),
+        'out_channel': (576, 200, 72, 40, 56),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b6'),
         'params': {
             'skip_connections': [9, 15, 31],
@@ -275,7 +275,7 @@ efficient_net_encoders = {
     },
     'efficientnet-b7': {
         'encoder': EfficientNetEncoder,
-        'out_shapes': (640, 224, 80, 48, 64),
+        'out_channel': (640, 224, 80, 48, 64),
         'pretrained_settings': _get_pretrained_settings('efficientnet-b7'),
         'params': {
             'skip_connections': [11, 18, 38],

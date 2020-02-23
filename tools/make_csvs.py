@@ -4,8 +4,8 @@ import pandas as pd
 from pathlib import Path
 from utils import *
 
-def make_df(data_dir, data_type):
-    def make_df_split(data_dir, data_type, split):
+def make_metric_learning_df(data_dir, data_type):
+    def _make_df_split(data_dir, data_type, split):
         img_dir = data_dir/data_type/'images'/split
         assert img_dir.is_dir()
 
@@ -27,14 +27,14 @@ def make_df(data_dir, data_type):
 
             else:
                 for img_path in sd.glob('*.png'):
-                    list_of_dicts.append({'Image':img_path, 'Label':sd.name,
+                    list_of_dicts.append({'Image':img_path, 'Category':sd.name,
                                           'OrgSplit':split})
         _df = pd.DataFrame(list_of_dicts)
 
         return _df
     
-    df_train = make_df_split(data_dir, data_type, 'train')
-    df_test  = make_df_split(data_dir, data_type, 'test')
+    df_train = _make_df_split(data_dir, data_type, 'train')
+    df_test  = _make_df_split(data_dir, data_type, 'test')
     df = pd.concat([df_train,df_test], ignore_index=True)
     
     return df
@@ -42,40 +42,45 @@ def make_df(data_dir, data_type):
 def create_csvs(data_dir, data_type):
     if data_type == 'mvtec_ad':
         target = 'CatAnml'
-        
-        # metlic learning should be evaluated with cross-validation, 
+        # metlic learning should be evaluated with cross-validation for MVTec-AD, 
         # cause original train data has no anomaly instances
-        df = make_df(data_dir, data_type)
-        df_metric_learning = take_stratified_split(df, target, n_splits=10)
-        del df_metric_learning[target]
-        
+        df = make_metric_learning_df(data_dir, data_type)
+        metric_learning_df = take_stratified_split(df, target, n_splits=10)
+        del metric_learning_df[target]
         # take train valid split for unsupervised learning (train/valid data consists of normal data)
         test_idx = df[df['OrgSplit']=='test'].index
-        df_unsv_learning = take_stratified_split(df, target, n_splits=1, valid_size=0.3, test_idx=test_idx)
-        del df_unsv_learning[target]
-        
-        # saving as csv
-        csv_dir = data_dir/data_type/'csvs'
-        ensure_folder(csv_dir)
-        df_unsv_learning.to_csv(csv_dir/'unsv_learning.csv',index=False)
-        df_metric_learning.to_csv(csv_dir/'metric_learning.csv',index=False)
-
-        # csv to refer as example at the time of inference
-        df_example = df[['Image', 'Category', 'Anomaly']].copy()
-        df_example.to_csv(csv_dir/'example.csv', index=False)
-        
-        return
+        unsv_learning_df = take_stratified_split(df, target, n_splits=1, valid_size=0.3, test_idx=test_idx)
+    else:
+        target = 'Category'
+        df =  make_metric_learning_df(data_dir, data_type)
+        df.loc[df['OrgSplit']=='train','Fold'] = 0
+        df.loc[df['OrgSplit']=='test' ,'Fold'] = 1
+        df.Fold = df.Fold.astype(int)
+        metric_learning_df = df
+        unsv_learning_df = df
     
-    else: # WIP
-        return
+    # saving as csv
+    csv_dir = data_dir/data_type/'csvs'
+    ensure_folder(csv_dir)
+    unsv_learning_df.to_csv(csv_dir/'unsv_learning.csv',index=False)
+    metric_learning_df.to_csv(csv_dir/'metric_learning.csv',index=False)
+
+    # csv to refer as example at the time of inference
+    if data_type == 'mvtec_ad':
+        df_example = df[['Image', 'Category', 'Anomaly']].copy()
+    else:
+        df_example = df[['Image', 'Category']].copy()
+    df_example.to_csv(csv_dir/'example.csv', index=False)
+        
+    return
 
 if __name__ == '__main__':
     current_file_path = os.path.realpath(__file__)
     data_dir = Path(current_file_path).parent.parent / 'data'
 
-    #print('----- Make CSVs for MNIST -----')
-    #create_csvs(data_dir, 'mnist')
-    #print('----- Make CIFAR10 for MNIST -----')
-    #create_csvs(data_dir, 'cifar10')
+    print('----- Make CSVs for MNIST -----')
+    create_csvs(data_dir, 'mnist')
+    print('----- Make CIFAR10 for MNIST -----')
+    create_csvs(data_dir, 'cifar10')
     print('----- Make CSVs for MVTec_AD -----')
     create_csvs(data_dir, 'mvtec_ad')

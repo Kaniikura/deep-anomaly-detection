@@ -1,17 +1,17 @@
 data: 
-  name: 'mvtec_ad'
-  num_classes: 15
-
-num_folds: 10
-fold_idx: 9
+  name: 'cifar10'
+  num_classes: 9
 
 model_name: 'AdaCos'
 
 dataset:
-  name: 'MetricDataset'
+  name: 'CifarMetricDataset' 
   params:
     data_dir: 'data'
     csv_filename: 'csvs/metric_learning.csv'
+    fold_idx: 1
+    num_folds: 2
+    anomaly_classes: ['bird']
 
   splits:
     - mode: 'train'
@@ -29,33 +29,34 @@ transform:
   name: 'metric_transform'
   num_preprocessor: 8
   params:
-    resize_to: (256, 256)
+    resize_to: (32, 32)
 
 model:
   params:
-    num_features: 512
-    num_classes: 15
+    num_features: 128
+    #num_classes: 10
     encoder: 'resnet18'
+    image_size: 32
 
 checkpoint: checkpoint/best.score.pth
 
 train:
   dir: 'train_dirs'
   log_step: 2
-  batch_size: 8
+  batch_size: 32
   gradient_accumulation_step: 1
-  num_epochs: 2
-  num_keep_checkpoint: 2
+  num_epochs: 3
+  num_keep_checkpoint: 1
   no_bias_decay: False
   encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
-  batch_size: 8
+  batch_size: 128
 
 inference:
   split: 'inference'
-  batch_size: 8
+  batch_size: 128
   output_path: 'outputs'
   cross_validation: True 
   reference_csv_filename: 'csvs/example.csv'

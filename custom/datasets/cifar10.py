@@ -13,14 +13,15 @@ from torch.utils.data.dataset import Dataset
 import dlcommon
 
 @dlcommon.DATASETS.register
-class MVTecMetricDataset(Dataset):
+class CifarMetricDataset(Dataset):
     def __init__(self,
                  data_dir,
                  split,
                  fold_idx,
                  num_folds,
                  transform=None,
-                 num_classes=15,
+                 num_classes=10,
+                 anomaly_classes=['bird', 'car', 'dog'],
                  onehot_enc = False,
                  csv_filename='csvs/metric_learning.csv',
                  **_):
@@ -30,6 +31,7 @@ class MVTecMetricDataset(Dataset):
         self.transform = transform
         self.data_dir = data_dir
         self.num_classes = num_classes
+        self.anomaly_classes = anomaly_classes
         self.onehot_enc = onehot_enc
         self.csv_filename = csv_filename
 
@@ -46,8 +48,9 @@ class MVTecMetricDataset(Dataset):
         if self.split in ['train' , 'get_embeddings']:
             folds = [i for i in range(self.num_folds) if i != self.fold_idx]
             df = df[df.Fold.isin(folds)]
-            # remove anomaly samples from train data
-            df = df[df['Anomaly'] == 0]
+            if self.split == 'train':
+                # remove anomaly samples from train data
+                df = df[~df.Category.isin(self.anomaly_classes)]
         else:
             folds = [self.fold_idx]
             df = df[df.Fold.isin(folds)]
@@ -73,7 +76,7 @@ class MVTecMetricDataset(Dataset):
             label_oh[label_idx] = 1
             label = label_oh
 
-        is_anomaly = selected_row['Anomaly']
+        is_anomaly = int(selected_row['Category'] in self.anomaly_classes)
         org_index = selected_row['OrignalIndex']
 
         if self.transform is not None:
@@ -86,7 +89,7 @@ class MVTecMetricDataset(Dataset):
         return len(self.df)
 
 @dlcommon.DATASETS.register
-class MVTecUnsvDataset(Dataset):
+class CifarUnsvDataset(Dataset):
     def __init__(self,
                  data_dir,
                  split,
