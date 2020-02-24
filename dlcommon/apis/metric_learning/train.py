@@ -265,6 +265,7 @@ def run(config):
             group_decay_encoder, group_no_decay_encoder = group_weight(model.encoder)
             base_lr = config.optimizer.params.lr
             params = [{'params': model.product.parameters(), 'lr': base_lr},
+                      {'params': model.fc.parameters(), 'lr': base_lr},
                       {'params': group_decay_encoder, 'lr': base_lr * encoder_lr_ratio},
                       {'params': group_no_decay_encoder, 'lr': base_lr * encoder_lr_ratio, 'weight_decay': 0.0}]
         else:
@@ -275,6 +276,7 @@ def run(config):
         denom = config.train.encoder_lr_ratio
         base_lr = config.optimizer.params.lr
         params = [{'params': model.encoder.parameters(), 'lr': base_lr * denom},
+                  {'params': model.fc.parameters(), 'lr': base_lr},
                   {'params': model.product.parameters(), 'lr': base_lr}]
     else:
         params = model.parameters()

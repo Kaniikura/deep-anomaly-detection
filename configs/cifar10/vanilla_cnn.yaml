@@ -2,7 +2,7 @@ data:
   name: 'cifar10'
   num_classes: 10
 
-model_name: 'ArcFace'
+model_name: 'VanillaCNN'
 
 dataset:
   name: 'CifarMetricDataset' 
@@ -43,9 +43,9 @@ checkpoint: checkpoint/best.score.pth
 train:
   dir: 'train_dirs'
   log_step: 2
-  batch_size: 8
+  batch_size: 64
   gradient_accumulation_step: 1
-  num_epochs: 5
+  num_epochs: 10
   num_keep_checkpoint: 1
   no_bias_decay: False
   encoder_lr_ratio: 0.1
@@ -62,20 +62,19 @@ inference:
   reference_csv_filename: 'csvs/example.csv'
 
 loss:
-  name: CrossEntropyLoss #'FocalLoss'
-  #params: 
-  #  gamma: 2
+  name: 'FocalLoss'
+  params: 
+    gamma: 2
 
 optimizer:
-  name: 'SGD'
+  name: 'Adam'
   params:
     lr: 0.001
-    momentum: 0.9
 
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 3
+    step_size : 5
 
 hooks:
   forward:

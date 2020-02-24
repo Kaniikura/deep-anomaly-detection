@@ -5,6 +5,8 @@ from __future__ import print_function
 
 import abc
 
+import torch.nn.functional as F
+
 class ForwardHookBase(object):
     __metaclass__ = abc.ABCMeta
 
@@ -21,7 +23,8 @@ class DMLForwardHook(ForwardHookBase):
         if split=='train' or split =='validation':
             return model(images, labels)
         elif split in ['evaluation', 'get_embeddings', 'inference']:
-            return model.encoder(images)
+            x = model.get_feature(images)
+            return F.normalize(x)
 
 class AEForwardHook(ForwardHookBase):
     def __call__(self, model, images, split, labels=None, data=None):

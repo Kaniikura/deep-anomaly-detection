@@ -27,7 +27,6 @@ def eval_config(config):
     dataname = str(config.data.name)
     modelname = str(config.model_name)
     config.model.name = modelname
-    config.model.params.num_classes = config.data.num_classes
     config.dataset.params.data_dir = os.path.join(str(config.dataset.params.data_dir),dataname)
     config.train.dir = os.path.join(str(config.train.dir), dataname, modelname, str(config.dataset.params.fold_idx))
     config.checkpoint = os.path.join(str(config.train.dir), str(config.checkpoint))

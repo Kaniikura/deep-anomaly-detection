@@ -2,7 +2,7 @@ data:
   name: 'cifar10'
   num_classes: 10
 
-model_name: 'ArcFace'
+model_name: 'AdaCos'
 
 dataset:
   name: 'CifarMetricDataset' 
@@ -43,9 +43,9 @@ checkpoint: checkpoint/best.score.pth
 train:
   dir: 'train_dirs'
   log_step: 2
-  batch_size: 8
+  batch_size: 128
   gradient_accumulation_step: 1
-  num_epochs: 5
+  num_epochs: 10
   num_keep_checkpoint: 1
   no_bias_decay: False
   encoder_lr_ratio: 0.1
@@ -75,7 +75,7 @@ optimizer:
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 3
+    step_size : 5
 
 hooks:
   forward:

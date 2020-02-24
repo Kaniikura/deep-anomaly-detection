@@ -49,6 +49,8 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks):
 def evaluate_split(config, model, split, dataloader, hooks, train_embs, train_labels):
     model.eval()
 
+    total = 0
+    correct = 0
     batch_size = config.evaluation.batch_size
     total_size = len(dataloader.dataset)
     total_step = math.ceil(total_size / batch_size)
@@ -103,6 +105,31 @@ def evaluate(config, model, hooks, dataloaders):
 
         dataloader = dataloader['dataloader']
         embs, labels = get_train_data_embedddings(config, model, split, dataloader, hooks)
+
+        import umap
+        from sklearn.datasets import load_digits
+        from scipy.sparse.csgraph import connected_components
+        import matplotlib.pyplot as plt
+        import matplotlib.cm as cm
+        from sklearn.manifold import TSNE
+        import time
+        # silence NumbaPerformanceWarning
+        import warnings
+        from numba.errors import NumbaPerformanceWarning
+        warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
+
+        def show_umap(embs, targets):
+            digits = load_digits()
+            targets = [float(targets[i]) for i in range(len(targets))]
+
+            # UMAP
+            embedding = umap.UMAP().fit_transform(embs)
+            plt.scatter(embedding[:,0],embedding[:,1],c=targets,cmap=cm.tab10)
+            plt.colorbar()
+            plt.show()
+        
+        #show_umap(embs, labels)
+
     # evaluation
     for dataloader in dataloaders:
         split = dataloader['split']

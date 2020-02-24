@@ -33,7 +33,7 @@ transform:
 model:
   params:
     num_features: 512
-    #num_classes: 15
+    num_classes: 15
     encoder: 'resnet18'
     image_size: 256
 
@@ -42,7 +42,7 @@ checkpoint: checkpoint/best.score.pth
 train:
   dir: 'train_dirs'
   log_step: 2
-  batch_size: 8
+  batch_size: 16
   gradient_accumulation_step: 1
   num_epochs: 2
   num_keep_checkpoint: 2
@@ -51,11 +51,11 @@ train:
   save_checkpoint_epoch: 1
 
 evaluation:
-  batch_size: 8
+  batch_size: 16
 
 inference:
   split: 'inference'
-  batch_size: 8
+  batch_size: 16
   output_path: 'outputs'
   cross_validation: True 
   reference_csv_filename: 'csvs/example.csv'
