@@ -4,6 +4,18 @@ import pandas as pd
 from pathlib import Path
 from utils import *
 
+CIFAR10_LABELMAP = {
+    'plane' : 0,
+    'car' : 1,
+    'bird' : 2,
+    'cat' : 3,
+    'deer' : 4,
+    'dog' : 5,
+    'frog': 6,
+    'horse' : 7,
+    'ship' : 8,
+    'truck' : 9,
+}
 def make_metric_learning_df(data_dir, data_type):
     def _make_df_split(data_dir, data_type, split):
         img_dir = data_dir/data_type/'images'/split
@@ -56,9 +68,14 @@ def create_csvs(data_dir, data_type):
         df.loc[df['OrgSplit']=='train','Fold'] = 0
         df.loc[df['OrgSplit']=='test' ,'Fold'] = 1
         df.Fold = df.Fold.astype(int)
+        df = df.reset_index()
+        if data_type == 'cifar10':
+            df['LabelIndex'] = df['Category'].apply(lambda x: CIFAR10_LABELMAP[x])
+    
         metric_learning_df = df
         unsv_learning_df = df
-    
+
+        
     # saving as csv
     csv_dir = data_dir/data_type/'csvs'
     ensure_folder(csv_dir)
@@ -80,7 +97,7 @@ if __name__ == '__main__':
 
     print('----- Make CSVs for MNIST -----')
     create_csvs(data_dir, 'mnist')
-    print('----- Make CIFAR10 for MNIST -----')
+    print('----- Make CSVs for CIFAR10 -----')
     create_csvs(data_dir, 'cifar10')
     print('----- Make CSVs for MVTec_AD -----')
     create_csvs(data_dir, 'mvtec_ad')

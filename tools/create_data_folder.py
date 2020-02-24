@@ -66,13 +66,9 @@ def prepare_CIFAR10(data_path=Path('../data/cifar10')):
             PIL.Image.fromarray(x).save(folder/f'img{y}_{i:06d}.png')
 
     train_ds = datasets.CIFAR10(data_path, train=True, download=True,
-                          transform=transforms.Compose([
-                              transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-                          ]))
+                          transform=None)
     valid_ds = datasets.CIFAR10(data_path, train=False,
-                          transform=transforms.Compose([
-                              transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-                          ]))
+                          transform=None)
 
     classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     if not have_already_been_done():

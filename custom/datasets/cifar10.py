@@ -45,19 +45,18 @@ class CifarMetricDataset(Dataset):
         df = df.fillna('')
         df['OrignalIndex'] = df.index
 
+        targets = sorted(df.Category.unique())
+
         if self.split in ['train' , 'get_embeddings']:
             folds = [i for i in range(self.num_folds) if i != self.fold_idx]
             df = df[df.Fold.isin(folds)]
-            if self.split == 'train':
-                # remove anomaly samples from train data
-                df = df[~df.Category.isin(self.anomaly_classes)]
         else:
             folds = [self.fold_idx]
             df = df[df.Fold.isin(folds)]
 
-        targets = sorted(df.Category.unique())
-        label_map = {cat:i for i,cat in enumerate(targets)}
-        df['LabelIndex'] = df.Category.apply(lambda x: label_map[x])
+        if self.split in ['train', 'validation'] and (self.anomaly_classes is not None):
+            # remove anomaly samples in training
+            df = df[~df.Category.isin(self.anomaly_classes)]
 
         df = df.reset_index()
 
@@ -76,13 +75,17 @@ class CifarMetricDataset(Dataset):
             label_oh[label_idx] = 1
             label = label_oh
 
-        is_anomaly = int(selected_row['Category'] in self.anomaly_classes)
+        if self.anomaly_classes is not None:
+            is_anomaly = int(selected_row['Category'] in self.anomaly_classes)
+        else:
+            is_anomaly = 0
+
         org_index = selected_row['OrignalIndex']
 
         if self.transform is not None:
             image = self.transform(image)
 
-        return {'image_id': image_id, 'image': image, 'label': label, 
+        return {'image_id': image_id, 'image': image, 'label': label,
                 'is_anomaly': is_anomaly, 'index':org_index}
 
     def __len__(self):

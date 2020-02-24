@@ -92,6 +92,9 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
         aggregated_outputs = []
         aggregated_labels = []
 
+        correct = 0
+        total = 0
+
         tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
         for i, data in tbar:
             images = data['image'].cuda() #to(device)
@@ -100,6 +103,10 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
                                        data=data, split=split)
             outputs = hooks.post_forward_fn(outputs=outputs, images=images, labels=labels,
                                             data=data, split=split)
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
+            acc = float(correct)/total
             loss = hooks.loss_fn(outputs=outputs, targets=labels, data=data, split=split)
             if isinstance(loss, dict):
                 loss_dict = loss
@@ -110,7 +117,7 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
 
             f_epoch = epoch + i / total_step
             tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
-            tbar.set_postfix(loss=loss.item())
+            tbar.set_postfix(loss=loss.item(), acc=acc)
 
             for key, value in loss_dict.items():
                 aggregated_loss_dict[key].append(value.item())
