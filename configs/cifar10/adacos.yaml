@@ -36,7 +36,6 @@ model:
     num_features: 512
     num_classes: 10
     encoder: 'resnet18'
-    image_size: 32
 
 checkpoint: checkpoint/best.score.pth
 

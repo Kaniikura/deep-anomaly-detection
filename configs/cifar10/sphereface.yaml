@@ -2,7 +2,7 @@ data:
   name: 'cifar10'
   num_classes: 10
 
-model_name: 'ArcFace'
+model_name: 'SphereFace'
 
 dataset:
   name: 'CifarMetricDataset' 

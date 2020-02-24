@@ -128,7 +128,7 @@ def evaluate(config, model, hooks, dataloaders):
             plt.colorbar()
             plt.show()
         
-        #show_umap(embs, labels)
+        show_umap(embs, labels)
 
     # evaluation
     for dataloader in dataloaders:

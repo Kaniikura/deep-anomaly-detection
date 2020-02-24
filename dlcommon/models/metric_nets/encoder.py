@@ -146,7 +146,7 @@ def build_encoder(backbone):
     if 'wsl' in backbone_name:
         backbone_config = {'name': backbone_name[:-4]}
     else:
-        backbone_config = {'name': backbone_name}
+        backbone_config = {'name': backbone_name, 'pretrained': 'imagenet'}
 
     backbone = build_from_config(backbone_config, BACKBONES)
 

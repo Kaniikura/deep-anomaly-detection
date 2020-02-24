@@ -12,27 +12,34 @@ import torch.nn.functional as F
 from .metrics import AdaCosProduct, ArcFaceProduct, CosFaceProduct, SphereFaceProduct
 from .encoder import build_encoder
 
+class AdaptiveConcatPool2d(nn.Module):
+    def __init__(self, sz=None):
+        super().__init__()
+        sz = sz or (1,1)
+        self.ap = nn.AdaptiveAvgPool2d(sz)
+        self.mp = nn.AdaptiveMaxPool2d(sz)
+    def forward(self, x): return torch.cat([self.mp(x), self.ap(x)], 1)
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, image_size, encoder, num_features):
+    def __init__(self, encoder, num_features):
         super().__init__()
 
         self.encoder = build_encoder(encoder)
-        self._out_channel = self.encoder.out_channel
-        _out_h = _out_w = math.ceil(image_size // 32)
-        self.out_features = np.prod(np.array([_out_h, _out_w, self._out_channel]))
+        self.avgpool = AdaptiveConcatPool2d()
+        self.out_features = self.encoder.out_channel * 2
 
     def forward(self, input):
             x = self.encoder(input)
+            x = self.avgpool(x)
             x = x.view(-1, self.out_features)
 
             return x
 
 
 class xxxFace(nn.Module):
-    def __init__(self, image_size, encoder, num_features, num_classes, xface_product):
+    def __init__(self, encoder, num_features, num_classes, xface_product):
         super(xxxFace, self).__init__()
-        self.encoder = FeatureExtractor(image_size, encoder, num_features)
+        self.encoder = FeatureExtractor(encoder, num_features)
         self.fc = nn.Sequential(
             nn.ReLU(),
             nn.Linear(self.encoder.out_features, num_features),
@@ -55,26 +62,26 @@ class xxxFace(nn.Module):
 
 
 class ArcFace(xxxFace):
-    def __init__(self, image_size, encoder, num_features, num_classes, xface_product=ArcFaceProduct):
-        super(ArcFace, self).__init__(image_size, encoder, num_features, num_classes, xface_product)
+    def __init__(self, encoder, num_features, num_classes, xface_product=ArcFaceProduct):
+        super(ArcFace, self).__init__(encoder, num_features, num_classes, xface_product)
 
 class AdaCos(xxxFace):
-    def __init__(self, image_size, encoder, num_features, num_classes, xface_product=AdaCosProduct):
-        super(AdaCos, self).__init__(image_size, encoder, num_features, num_classes, xface_product=AdaCosProduct)
+    def __init__(self, encoder, num_features, num_classes, xface_product=AdaCosProduct):
+        super(AdaCos, self).__init__(encoder, num_features, num_classes, xface_product=AdaCosProduct)
 
 class CosFace(xxxFace):
-    def __init__(self, image_size, encoder, num_features, num_classes, xface_product=CosFaceProduct):
-        super(CosFace, self).__init__(image_size, encoder, num_features, num_classes, xface_product)
+    def __init__(self, encoder, num_features, num_classes, xface_product=CosFaceProduct):
+        super(CosFace, self).__init__(encoder, num_features, num_classes, xface_product)
 
 class SphereFace(xxxFace):
-    def __init__(self, image_size, encoder, num_features, num_classes, xface_product=SphereFaceProduct):
-        super(SphereFace, self).__init__(image_size, encoder, num_features, num_classes, xface_product)
+    def __init__(self, encoder, num_features, num_classes, xface_product=SphereFaceProduct):
+        super(SphereFace, self).__init__(encoder, num_features, num_classes, xface_product)
 
 
 class VanillaCNN(nn.Module):
-    def __init__(self, image_size, encoder, num_features, num_classes):
+    def __init__(self, encoder, num_features, num_classes):
         super(VanillaCNN, self).__init__()
-        self.encoder = FeatureExtractor(image_size, encoder, num_features)
+        self.encoder = FeatureExtractor(encoder, num_features)
         self.fc = nn.Sequential(
             nn.ReLU(),
             nn.Linear(self.encoder.out_features, num_features),
