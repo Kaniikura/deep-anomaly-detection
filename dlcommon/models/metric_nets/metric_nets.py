@@ -12,6 +12,17 @@ import torch.nn.functional as F
 from .metrics import AdaCosProduct, ArcFaceProduct, CosFaceProduct, SphereFaceProduct
 from .encoder import build_encoder
 
+def _init_module_params(modules):
+    for m in modules:
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight)
+        elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight)
+            nn.init.constant_(m.bias, 0)
+
 class AdaptiveConcatPool2d(nn.Module):
     def __init__(self, sz=None):
         super().__init__()
@@ -46,7 +57,10 @@ class xxxFace(nn.Module):
             nn.ReLU(),
             nn.BatchNorm1d(num_features),
         )
+        _init_module_params(self.fc)
         self.product = xface_product(num_features, num_classes)
+
+        
     
     def get_feature(self, input):
         x = self.encoder(input)
@@ -88,9 +102,11 @@ class VanillaCNN(nn.Module):
             nn.ReLU(),
             nn.BatchNorm1d(num_features),
         )
+        _init_module_params(self.fc)
         self.product = nn.Sequential(
             nn.Linear(num_features, num_classes),
         )
+        _init_module_params(self.product)
     
     def get_feature(self, input):
         x = self.encoder(input)

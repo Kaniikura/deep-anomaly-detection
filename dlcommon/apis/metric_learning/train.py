@@ -253,7 +253,6 @@ def run(config):
 
     # build model
     model = build_model(config, hooks)
-    print(model)
     # build loss
     loss = build_loss(config)
     loss_fn = hooks.loss_fn

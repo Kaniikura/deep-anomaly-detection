@@ -39,7 +39,7 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks):
             aggregated_labels.append(labels.cpu().numpy()) 
 
     # Putting all embeddings in shape (number of samples, length of one sample embeddings)
-    aggregated_embs = np.concatenate(aggregated_embs) 
+    aggregated_embs = torch.FloatTensor(np.concatenate(aggregated_embs)).cuda() # WIP: refactoring
     aggregated_labels = np.concatenate(aggregated_labels)
 
     return aggregated_embs, aggregated_labels
@@ -67,8 +67,8 @@ def inference_split(config, model, split, dataloader, hooks, train_embs, train_l
 
             embs = hooks.forward_fn(model=model, images=images, labels=labels,
                                        data=data, split=split)
-            embs = embs.cpu().numpy()
             distances = hooks.distance_fn(train_embs=train_embs, test_embs=embs, split=split)
+            distances = distances.cpu().numpy()
             aggregated_distances.append(distances)
             aggregated_labels.append(labels.numpy())
             aggregated_indices.append(indices.numpy())

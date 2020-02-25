@@ -44,10 +44,9 @@ train:
   log_step: 2
   batch_size: 64
   gradient_accumulation_step: 1
-  num_epochs: 10
+  num_epochs: 13
   num_keep_checkpoint: 1
   no_bias_decay: False
-  encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
@@ -66,14 +65,16 @@ loss:
     gamma: 2
 
 optimizer:
-  name: 'Adam'
+  name: 'SGD'
   params:
     lr: 0.001
+    momentum: 0.9
+    weight_decay: 0.0005
 
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 5
+    step_size : 8
 
 hooks:
   forward:

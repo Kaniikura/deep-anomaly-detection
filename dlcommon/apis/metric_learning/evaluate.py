@@ -18,6 +18,8 @@ from dlcommon.builder import (
 )
 import dlcommon.utils
 
+from custom.visualize import show_umap
+
 
 def get_train_data_embedddings(config, model, split, dataloader, hooks):
     model.eval()
@@ -41,7 +43,7 @@ def get_train_data_embedddings(config, model, split, dataloader, hooks):
             aggregated_labels.append(labels.cpu().numpy()) 
 
     # Putting all embeddings in shape (number of samples, length of one sample embeddings)
-    aggregated_embs = np.concatenate(aggregated_embs) 
+    aggregated_embs = torch.FloatTensor(np.concatenate(aggregated_embs)).cuda() # WIP: refactoring
     aggregated_labels = np.concatenate(aggregated_labels)
 
     return aggregated_embs, aggregated_labels
@@ -70,8 +72,8 @@ def evaluate_split(config, model, split, dataloader, hooks, train_embs, train_la
 
             embs = hooks.forward_fn(model=model, images=images, labels=labels,
                                        data=data, split=split)
-            embs = embs.cpu().numpy()
             distances = hooks.distance_fn(train_embs=train_embs, test_embs=embs, split=split)
+            distances = distances.cpu().numpy()
             aggregated_distances.append(distances)
             aggregated_labels.append(labels.cpu().numpy())
 
@@ -105,30 +107,7 @@ def evaluate(config, model, hooks, dataloaders):
 
         dataloader = dataloader['dataloader']
         embs, labels = get_train_data_embedddings(config, model, split, dataloader, hooks)
-
-        import umap
-        from sklearn.datasets import load_digits
-        from scipy.sparse.csgraph import connected_components
-        import matplotlib.pyplot as plt
-        import matplotlib.cm as cm
-        from sklearn.manifold import TSNE
-        import time
-        # silence NumbaPerformanceWarning
-        import warnings
-        from numba.errors import NumbaPerformanceWarning
-        warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
-
-        def show_umap(embs, targets):
-            digits = load_digits()
-            targets = [float(targets[i]) for i in range(len(targets))]
-
-            # UMAP
-            embedding = umap.UMAP().fit_transform(embs)
-            plt.scatter(embedding[:,0],embedding[:,1],c=targets,cmap=cm.tab10)
-            plt.colorbar()
-            plt.show()
-        
-        show_umap(embs, labels)
+        show_umap(embs.cpu(), labels)
 
     # evaluation
     for dataloader in dataloaders:
