@@ -32,14 +32,24 @@ transform:
     is_flip: True
 
 model:
-  name: SAGAN
-  params:
-    image_size: 128
-    z_dim: 100
-    conv_dim: 64
+  gan:
+    name: SAGAN
+    params:
+      image_size: 128
+      z_dim: 100
+      conv_dim: 64
+  encoder:
+    name: ResEncoder
+    params:
+      image_size: 128
+      z_dim: 100
+      max_dim: 256
+      n_res_block: 1
 
 checkpoint: 
-  gen: checkpoint/best.score.pth
+  g: g_checkpoint/epoch_0049.pth
+  d: d_checkpoint/epoch_0049.pth
+  e: e_checkpoint/epoch_0199.pth
 
 train:
   adv_loss: 'wgan-gp'
@@ -51,10 +61,14 @@ train:
   gen_iter : 1
   lambda_gp: 10
   z_dim: 100
-  num_epochs: 300
+  num_epochs: 50
   num_keep_checkpoint: 1
   no_bias_decay: False
   save_checkpoint_epoch: 1
+
+  encoder:
+    num_epochs: 200
+    kappa: 1.
 
 
 inference:
@@ -77,4 +91,13 @@ optimizer:
     params:
       lr: 0.0001
       betas: [0.5, 0.999]
+
+  encoder:
+    name: 'Adam'
+    params:
+      lr: 0.001
+
+hooks:
+  metric: 
+    name: 'AEMetricHook'
   

@@ -116,7 +116,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     """Discriminator, Auxiliary Classifier."""
 
-    def __init__(self, image_size=128, conv_dim=64):
+    def __init__(self, image_size=128, z_dim=100, conv_dim=64):
         super(Discriminator, self).__init__()
         self.imsize = image_size
         layer1 = []
@@ -165,23 +165,26 @@ class Discriminator(nn.Module):
             self.attn1 = Self_Attn(256, 'relu')
             self.sa_conv = nn.Sequential(self.l1, self.l2, self.l3, self.attn1)
         
-        self.last_channel = curr_dim
-        last.append(nn.Conv2d(curr_dim, 1, 4))
-        self.last = nn.Sequential(*last)
+        self.last_feature = nn.Sequential(
+            nn.Conv2d(curr_dim, z_dim, 4),
+            nn.Flatten(),
+        )
+
+        self.last_ln = nn.Linear(z_dim, 1)
 
     def get_feature(self, x):
         x = self.sa_conv(x)
-        out = x.view(-1, self.last_channel*4*4)
+        out = self.last_feature(x)
 
         return out
 
     def forward(self, x):
-        x = self.sa_conv(x)
-        out = self.last(x)
+        x = self.get_feature(x)
+        out = self.last_ln(x)
 
-        return out.squeeze()
+        return out
 
 class SAGAN():
     def __init__(self, image_size=128, z_dim=100, conv_dim=64):
         self.G = Generator(image_size, z_dim, conv_dim)
-        self.D = Discriminator(image_size, conv_dim)
+        self.D = Discriminator(image_size, z_dim, conv_dim)

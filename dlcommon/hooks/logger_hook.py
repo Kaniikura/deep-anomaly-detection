@@ -36,7 +36,7 @@ class DefaultLoggerHook(LoggerHookBase):
             log_step = epoch
 
         for key, value in log_dict.items():
-            if key=='images' or key=='gen_images':
+            if key=='images' or key=='gen_images' or key=='recon_images':
                 imgs = log_dict[key]
                 if is_normalized:
                     imgs = inv_normalize(imgs)

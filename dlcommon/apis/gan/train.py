@@ -51,7 +51,7 @@ def tensor2var(x, grad=False):
 def prepare_directories(config):
     os.makedirs(os.path.join(config.train.dir, 'checkpoint'), exist_ok=True)
 
-def train_single_epoch(config, G, D, g_optimizer, d_optimizer, split, dataloader, hooks, epoch):
+def train_gan_single_epoch(config, G, D, g_optimizer, d_optimizer, split, dataloader, hooks, epoch):
     batch_size = config.train.batch_size
     total_size = len(dataloader.dataset)
     total_step = math.ceil(total_size / batch_size)
@@ -153,7 +153,7 @@ def train_single_epoch(config, G, D, g_optimizer, d_optimizer, split, dataloader
                             epoch=epoch, step=i, num_steps_in_epoch=total_step, is_normalized=True)
     
 
-def train(config, G, D, g_optimizer, d_optimizer,
+def train_gan(config, G, D, g_optimizer, d_optimizer,
           dataloaders, hooks, last_epoch):
     best_ckpt_score = -100000
     
@@ -167,7 +167,7 @@ def train(config, G, D, g_optimizer, d_optimizer,
                 continue
 
             dataloader = dataloader['dataloader']
-            train_single_epoch(config, G, D, g_optimizer, d_optimizer, split, 
+            train_gan_single_epoch(config, G, D, g_optimizer, d_optimizer, split, 
                                 dataloader, hooks, epoch)
 
         # save models
@@ -177,6 +177,81 @@ def train(config, G, D, g_optimizer, d_optimizer,
             dlcommon.utils.save_checkpoint(config, D, d_optimizer,
                                         epoch, keep=config.train.num_keep_checkpoint, member='d')
 
+
+def train_enc_single_epoch(config, G, D, E, e_optimizer, split, dataloader, hooks, epoch):
+    E.train()
+    D.eval()
+    G.eval()
+
+    batch_size = config.train.batch_size
+    total_size = len(dataloader.dataset)
+    total_step = math.ceil(total_size / batch_size)
+
+    # Fixed input for debugging
+    fixed_z = tensor2var(torch.randn(batch_size, config.train.z_dim))
+
+    MSE = torch.nn.MSELoss()
+
+    tbar = tqdm.tqdm(enumerate(dataloader), total=total_step)
+    for i, data in tbar:
+        real_images = data['image'].cuda()
+        # image encoding
+        z = E(real_images)
+        # reconstruct image from latent features
+        recon_images = G(z)
+        # get the last activation of dicriminator 
+        recon_features = D(recon_images)
+        image_features = D(real_images)
+
+        loss_img = MSE(real_images, recon_images)
+        loss_fts = MSE(recon_features, image_features)
+        loss = loss_img + config.train.encoder.kappa*loss_fts
+
+        # Backward + Optimize
+        e_optimizer.zero_grad()
+        loss.backward()
+        e_optimizer.step()
+
+        # Print out log info
+        f_epoch = epoch + i / total_step
+        tbar.set_description(f'{split}, {f_epoch:.2f} epoch')
+        tbar.set_postfix(loss = f'{loss.item():.4f}')
+
+        log_dict = dict()
+        if i % config.train.image_log_step == 0:
+            log_dict['images'] = real_images.cpu()
+            log_dict['recon_images'] = recon_images.detach().cpu()
+        
+        if i % config.train.log_step == 0:
+            log_dict.update({
+                'loss': loss,
+                'loss_img': loss_img,
+                'loss_fts': loss_fts,
+            })
+            hooks.logger_fn(split=split, outputs=None, labels=None, log_dict=log_dict,
+                            epoch=epoch, step=i, num_steps_in_epoch=total_step, is_normalized=True)
+
+def train_encoder(config, G, D, E, e_optimizer, dataloaders, hooks, last_epoch):
+    best_ckpt_score = -100000
+    
+    for epoch in range(last_epoch, config.train.encoder.num_epochs):
+        # train 
+        for dataloader in dataloaders:
+            split = dataloader['split']
+            dataset_mode = dataloader['mode']
+
+            if dataset_mode != 'train':
+                continue
+
+            dataloader = dataloader['dataloader']
+            train_enc_single_epoch(config, G, D, E, e_optimizer, split, 
+                                dataloader, hooks, epoch)
+
+        # save models
+        if epoch % config.train.save_checkpoint_epoch == 0:
+            dlcommon.utils.save_checkpoint(config, E, e_optimizer,
+                                        epoch, keep=config.train.num_keep_checkpoint, member='e')
+    
 
 def to_data_parallel(config, model, optimizer):
     if 'sync_bn' in config.train:
@@ -204,8 +279,9 @@ def run(config):
     # build hooks
     hooks = build_hooks(config)
 
+    # GAN training
     # build model
-    model = build_model(config, hooks)
+    model = build_model(config, hooks, member='gan')
     G = model.G
     D = model.D
     
@@ -241,10 +317,36 @@ def run(config):
     hooks.logger_fn = lambda **kwargs: logger_fn(writer=writer, **kwargs)
 
     # train loop
-    train(config=config,
-          G=G, D=D,
-          g_optimizer=g_optimizer,
-          d_optimizer=d_optimizer,
-          dataloaders=dataloaders,
-          hooks=hooks,
-          last_epoch=last_epoch+1)
+    train_gan(config=config,
+            G=G, D=D,
+            g_optimizer=g_optimizer,
+            d_optimizer=d_optimizer,
+            dataloaders=dataloaders,
+            hooks=hooks,
+            last_epoch=last_epoch+1)
+
+    # Encoder training
+    # build model
+    E = build_model(config, hooks, member='encoder')
+
+    # build optimizer
+    enc_params = E.parameters()
+    e_optimizer = build_optimizer(config, member='encoder', params=enc_params)
+
+    E = E.cuda()
+
+    e_checkpoint = dlcommon.utils.get_initial_checkpoint(config, member='e')
+    if e_checkpoint is not None:
+        last_epoch, step = dlcommon.utils.load_checkpoint(E, e_optimizer, e_checkpoint)
+        print('epoch, step:', last_epoch, step)
+    else:
+        last_epoch, step = -1, -1
+
+    E, e_optimizer = to_data_parallel(config, E, e_optimizer)
+
+    train_encoder(config=config,
+                G=G, D=D, E=E,
+                e_optimizer=e_optimizer,
+                dataloaders=dataloaders,
+                hooks=hooks,
+                last_epoch=last_epoch+1)

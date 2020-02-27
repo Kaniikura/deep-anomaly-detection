@@ -69,6 +69,8 @@ def load_checkpoint(model, optimizer, checkpoint):
 def save_checkpoint(config, model, optimizer, epoch, step=0, keep=None, weights_dict=None, name=None, member=None):
     checkpoint_name = 'checkpoint' if member is None else f'{member}_checkpoint'
     checkpoint_dir = os.path.join(config.train.dir, checkpoint_name)
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir, exist_ok=True)
 
     if name:
         checkpoint_path = os.path.join(checkpoint_dir, '{}.pth'.format(name))

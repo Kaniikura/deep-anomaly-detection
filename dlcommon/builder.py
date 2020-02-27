@@ -36,11 +36,14 @@ def build_dataloaders(config):
                 dataset_config, DATASETS,
                 default_args={'transform': transform})
 
-        is_train = dataset_config.params.mode == 'train'
-        if is_train:
+        if dataset_config.params.mode == 'train':
             batch_size = config.train.batch_size
-        else:
+        elif dataset_config.params.mode == 'evaluation':
             batch_size = config.evaluation.batch_size
+        elif dataset_config.params.mode == 'inference':
+            batch_size = config.inference.batch_size
+        
+        is_train = dataset_config.params.mode == 'train'
         dataloader = DataLoader(dataset,
                                 shuffle=is_train,
                                 batch_size=batch_size,
@@ -98,8 +101,11 @@ def build_hooks(config):
     return hooks
 
 
-def build_model(config, hooks):
-    return hooks.build_model_fn(config.model)
+def build_model(config, hooks, member=None):
+    if member is None:
+        return hooks.build_model_fn(config.model)
+    else:
+        return hooks.build_model_fn(config.model[member])
 
 
 def build_optimizer(config, member=None, **kwargs):

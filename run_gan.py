@@ -15,7 +15,7 @@ import custom   # import all custom modules for registering objects.
 from dlcommon.initialization import initialize
 from dlcommon.utils import ex
 from dlcommon.apis.gan.train import run as run_train
-#from dlcommon.apis.gan.inference import run as run_inference
+from dlcommon.apis.gan.inference import run as run_inference
 
 
 ex.captured_out_filter = apply_backspaces_and_linefeeds
@@ -28,7 +28,6 @@ def eval_config(config):
     modelname = str(config.model_name)
     config.dataset.params.data_dir = os.path.join(str(config.dataset.params.data_dir),dataname)
     config.train.dir = os.path.join(str(config.train.dir), dataname, modelname)
-    config.checkpoint = os.path.join(str(config.train.dir), str(config.checkpoint))
 
     return config
 
@@ -46,15 +45,6 @@ def train(_run, _config):
     print('train')
     pprint.PrettyPrinter(indent=2).pprint(config)
     run_train(config)
-
-@ex.command
-def evaluate(_run, _config):
-    config = edict(_config)
-    config = eval_config(config)
-    print('------------------------------------------------')
-    print('evaluate')
-    pprint.PrettyPrinter(indent=2).pprint(config)
-    #run_evaluate(config)
 
 @ex.command
 def inference(_run, _config):
