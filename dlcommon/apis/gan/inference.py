@@ -45,7 +45,10 @@ def inference_split(config, G, D, E, split, dataloader, hooks, score_fn):
 
         loss_img = score_fn(recon_images, real_images)
         loss_fts = score_fn(recon_features, image_features)
-        scores = loss_img #+ config.train.encoder.kappa*loss_fts
+        if config.inference.use_feature_loss:
+            scores = loss_img + config.train.encoder.kappa*loss_fts
+        else:
+            scores = loss_img
         aggregated_labels.append(labels.numpy())
         aggregated_scores.append(scores.cpu().numpy())
         aggregated_indices.append(indices.numpy())

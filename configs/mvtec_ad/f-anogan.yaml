@@ -8,7 +8,7 @@ dataset:
   params:
     data_dir: 'data'
     csv_filename: 'csvs/unsv_learning.csv'
-    target: 'bottle'
+    target: 'grid'
 
   splits:
     - mode: 'train'
@@ -49,7 +49,7 @@ model:
 checkpoint: 
   g: g_checkpoint/epoch_0049.pth
   d: d_checkpoint/epoch_0049.pth
-  e: e_checkpoint/epoch_0199.pth
+  e: e_checkpoint/epoch_0049.pth
 
 train:
   adv_loss: 'wgan-gp'
@@ -61,19 +61,20 @@ train:
   gen_iter : 1
   lambda_gp: 10
   z_dim: 100
-  num_epochs: 50
+  num_epochs: 100
   num_keep_checkpoint: 1
   no_bias_decay: False
   save_checkpoint_epoch: 1
 
   encoder:
-    num_epochs: 200
-    kappa: 1.
+    num_epochs: 100
+    kappa: 0.1
 
 
 inference:
   split: 'inference'
   batch_size: 8
+  use_feature_loss: False
   output_path: 'outputs'
   cross_validation: True 
   reference_csv_filename: 'example.csv'
