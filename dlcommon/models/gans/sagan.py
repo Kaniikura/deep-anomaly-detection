@@ -175,7 +175,7 @@ class Discriminator(nn.Module):
     def get_feature(self, x):
         x = self.sa_conv(x)
         x = self.last_feature(x)
-        out = F.tanh(x)
+        out = torch.tanh(x)
 
         return out
 

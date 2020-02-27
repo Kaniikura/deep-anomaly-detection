@@ -8,7 +8,7 @@ dataset:
   params:
     data_dir: 'data'
     csv_filename: 'csvs/unsv_learning.csv'
-    target: 'metal_nut'
+    target: 'screw'
 
   splits:
     - mode: 'train'
@@ -59,9 +59,10 @@ train:
   batch_size: 8
   critic_iter : 1
   gen_iter : 1
+  noisy_label_prob: 0.05
   lambda_gp: 10
   z_dim: 100
-  num_epochs: 100
+  num_epochs: 1000
   num_keep_checkpoint: 1
   no_bias_decay: False
   save_checkpoint_epoch: 1
@@ -74,7 +75,7 @@ train:
 inference:
   split: 'inference'
   batch_size: 8
-  use_feature_loss: False
+  use_feature_loss: True
   output_path: 'outputs'
   cross_validation: True 
   reference_csv_filename: 'example.csv'

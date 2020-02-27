@@ -67,24 +67,27 @@ def train_gan_single_epoch(config, G, D, g_optimizer, d_optimizer, split, datalo
 
         real_images = data['image'].cuda()
 
-        # Compute loss with real images
+        
         real_images = tensor2var(real_images)
-        d_out_real = D(real_images)
-        if config.train.adv_loss == 'wgan-gp':
-            d_loss_real = - torch.mean(d_out_real)
-        elif config.train.adv_loss == 'hinge':
-            d_loss_real = torch.nn.ReLU()(1.0 - d_out_real).mean()
-
         # apply Gumbel Softmax
         z = tensor2var(torch.randn(real_images.size(0), config.train.z_dim))
         fake_images = G(z)
-        d_out_fake = D(fake_images)
-
+        # Compute loss
+        if config.train.noisy_label_prob > 0 and config.train.noisy_label_prob < 1:
+            is_flipping = np.random.randint(1//config.train.noisy_label_prob, size=1)[0] == 1
+        if not is_flipping:
+            d_out_real = D(real_images)
+            d_out_fake = D(fake_images)
+        else:
+            d_out_real = D(fake_images)
+            d_out_fake = D(real_images)
+            
         if config.train.adv_loss == 'wgan-gp':
+            d_loss_real = - torch.mean(d_out_real)
             d_loss_fake = d_out_fake.mean()
         elif config.train.adv_loss == 'hinge':
+            d_loss_real = torch.nn.ReLU()(1.0 - d_out_real).mean()
             d_loss_fake = torch.nn.ReLU()(1.0 + d_out_fake).mean()
-
 
         # Backward + Optimize
         d_loss = d_loss_real + d_loss_fake
@@ -200,8 +203,8 @@ def train_enc_single_epoch(config, G, D, E, e_optimizer, split, dataloader, hook
         # reconstruct image from latent features
         recon_images = G(z)
         # get the last activation of dicriminator 
-        recon_features = D(recon_images)
-        image_features = D(real_images)
+        recon_features = D.get_feature(recon_images)
+        image_features = D.get_feature(real_images)
 
         loss_img = MSE(real_images, recon_images)
         loss_fts = MSE(recon_features, image_features)
