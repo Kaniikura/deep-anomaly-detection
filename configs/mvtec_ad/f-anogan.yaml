@@ -8,7 +8,7 @@ dataset:
   params:
     data_dir: 'data'
     csv_filename: 'csvs/unsv_learning.csv'
-    target: 'hazelnut'
+    target: 'metal_nut'
 
   splits:
     - mode: 'train'
@@ -47,8 +47,8 @@ model:
       n_res_block: 1
 
 checkpoint: 
-  g: g_checkpoint/epoch_0299.pth
-  d: d_checkpoint/epoch_0299.pth
+  g: g_checkpoint/epoch_0099.pth
+  d: d_checkpoint/epoch_0099.pth
   e: e_checkpoint/epoch_0099.pth
 
 train:
@@ -61,14 +61,14 @@ train:
   gen_iter : 1
   lambda_gp: 10
   z_dim: 100
-  num_epochs: 300
+  num_epochs: 100
   num_keep_checkpoint: 1
   no_bias_decay: False
   save_checkpoint_epoch: 1
 
   encoder:
     num_epochs: 100
-    kappa: 0.005
+    kappa: 1.
 
 
 inference:

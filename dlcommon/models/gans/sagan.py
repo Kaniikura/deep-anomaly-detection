@@ -174,12 +174,14 @@ class Discriminator(nn.Module):
 
     def get_feature(self, x):
         x = self.sa_conv(x)
-        out = self.last_feature(x)
+        x = self.last_feature(x)
+        out = F.tanh(x)
 
         return out
 
     def forward(self, x):
-        x = self.get_feature(x)
+        x = self.sa_conv(x)
+        x = self.last_feature(x)
         out = self.last_ln(x)
 
         return out
