@@ -25,17 +25,12 @@ class DefaultModelBuilderHook(ModelBuilderHookBase):
         #######################################################################
         if BACKBONES.get(config.name) is not None:
             return self.build_metric_model(config)
-            print('=====\n'*10)
 
         #######################################################################
-        # GANs
+        # GANs or other models
         #######################################################################
-        ## WIP
-
-        #######################################################################
-        # other models
-        #######################################################################
-        return build_from_config(config, MODELS)
+        else:
+            return build_from_config(config, MODELS)
 
     def build_metric_model(config):
         model = build_from_config(config, BACKBONES)

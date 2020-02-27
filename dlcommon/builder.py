@@ -102,10 +102,16 @@ def build_model(config, hooks):
     return hooks.build_model_fn(config.model)
 
 
-def build_optimizer(config, **kwargs):
-    return build_from_config(config.optimizer,
-                             OPTIMIZERS,
-                             default_args=kwargs)
+def build_optimizer(config, member=None, **kwargs):
+    if member is not None:
+        return build_from_config(config.optimizer[member],
+                                OPTIMIZERS,
+                                default_args=kwargs)
+
+    else:
+        return build_from_config(config.optimizer,
+                                OPTIMIZERS,
+                                default_args=kwargs)
 
 
 def build_scheduler(config, **kwargs):

@@ -8,17 +8,14 @@ import albumentations as albu
 
 import dlcommon
 
-def get_training_augmentation(resize_to=(256,256), crop_size=(224, 224)):
+def get_training_augmentation(resize_to=(256,256), crop_size=(224, 224), is_flip = False):
     print('[get_training_augmentation] resize_to:', resize_to) 
     #print('[get_training_augmentation] crop_size:', crop_size) 
 
     train_transform = [
-        #albu.RandomScale(scale_limit=(0, 0.1),p=0.75), 
-        #albu.Rotate(limit=10, p=0.75),
         albu.Resize(*resize_to),
+        RandomHorizontalFlip() if is_flip else albu.Lambda(),
         #albu.RandomCrop(*crop_size),
-        #albu.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=(-0.2, 0.25), p=0.75),
-        
         albu.Normalize(),
     ]
 
@@ -32,14 +29,15 @@ def get_test_augmentation(resize_to=(256,256)):
     return albu.Compose(test_transform)
 
 @dlcommon.TRANSFORMS.register
-def metric_transform(split, resize_to=(256,256), tta=1, **_):
+def metric_transform(split, resize_to=(256,256), is_flip=False, tta=1, **_):
     if isinstance(resize_to, str):
         resize_to = eval(resize_to)
     
     print('[metric__transform] resize_to:', resize_to)
+    print('[metric__transform] is_flip:', is_flip)
     print('[metric_transform] tta:', tta)
 
-    train_aug = get_training_augmentation(resize_to)
+    train_aug = get_training_augmentation(resize_to, is_flip)
     test_aug = get_test_augmentation(resize_to)
 
     def transform(image):

@@ -1,17 +1,16 @@
 data: 
   name: 'cifar10'
-  num_classes: 10
 
-model_name: 'SphereFace'
+model_name: 'SAGAN'
 
 dataset:
-  name: 'CifarMetricDataset' 
+  name: 'CifarUnsvDataset' 
   params:
     data_dir: 'data'
-    csv_filename: 'csvs/metric_learning.csv'
+    csv_filename: 'csvs/unsv_learning.csv'
     fold_idx: 1
     num_folds: 2
-    anomaly_classes: ['bird', 'plane', 'cat']
+    target: 'bird'
 
   splits:
     - mode: 'train'
@@ -26,61 +25,56 @@ dataset:
       split: 'inference'
 
 transform:
-  name: 'metric_transform'
+  name: 'unsv_transform'
   num_preprocessor: 8
   params:
     resize_to: (32, 32)
     is_flip: True
 
 model:
+  name: SAGAN
   params:
-    num_features: 512
-    num_classes: 10
-    encoder: 'resnet18'
+    image_size: 32
+    z_dim: 100
+    conv_dim: 64
 
-checkpoint: checkpoint/best.score.pth
+checkpoint: 
+  gen: checkpoint/best.score.pth
 
 train:
+  adv_loss: 'wgan-gp'
   dir: 'train_dirs'
-  log_step: 2
+  log_step: 10
+  image_log_step: 100
   batch_size: 64
-  gradient_accumulation_step: 1
-  num_epochs: 10
+  critic_iter : 1
+  gen_iter : 1
+  lambda_gp: 10
+  z_dim: 100
+  num_epochs: 300
   num_keep_checkpoint: 1
   no_bias_decay: False
   save_checkpoint_epoch: 1
 
-evaluation:
-  batch_size: 128
 
 inference:
   split: 'inference'
-  batch_size: 128
+  batch_size: 8
   output_path: 'outputs'
   cross_validation: True 
   reference_csv_filename: 'csvs/example.csv'
 
-loss:
-  name: 'FocalLoss'
-  params: 
-    gamma: 2
 
 optimizer:
-  name: 'SGD'
-  params:
-    lr: 0.001
-    momentum: 0.9
+  critic:
+      name: 'Adam'
+      params:
+        lr: 0.0004
+        betas: [0.5, 0.999]
 
-scheduler:
-  name: 'StepLR'
-  params:
-    step_size : 5
-
-hooks:
-  forward:
-    name: 'DMLForwardHook'
-  distance:
-    name: 'CosineDistanceHook'
-  metric: 
-    name: 'DMLMetricHook'
-
+  gen:
+    name: 'Adam'
+    params:
+      lr: 0.0001
+      betas: [0.5, 0.999]
+  

@@ -1,0 +1,80 @@
+data: 
+  name: 'mvtec_ad'
+
+model_name: 'SAGAN'
+
+dataset:
+  name: 'MVTecUnsvDataset' 
+  params:
+    data_dir: 'data'
+    csv_filename: 'csvs/unsv_learning.csv'
+    target: 'bottle'
+
+  splits:
+    - mode: 'train'
+      split: 'train'
+      folds: 0,
+    - mode: 'validation'
+      split: 'validation'
+      folds: 1,
+    - mode: 'evaluation'
+      split: 'evaluation'
+      folds: 1,
+    - mode: 'inference'
+      split: 'inference'
+      folds: 2,
+
+transform:
+  name: 'unsv_transform'
+  num_preprocessor: 8
+  params:
+    resize_to: (128, 128)
+    is_flip: True
+
+model:
+  name: SAGAN
+  params:
+    image_size: 128
+    z_dim: 100
+    conv_dim: 64
+
+checkpoint: 
+  gen: checkpoint/best.score.pth
+
+train:
+  adv_loss: 'wgan-gp'
+  dir: 'train_dirs'
+  log_step: 10
+  image_log_step: 100
+  batch_size: 8
+  critic_iter : 1
+  gen_iter : 1
+  lambda_gp: 10
+  z_dim: 100
+  num_epochs: 300
+  num_keep_checkpoint: 1
+  no_bias_decay: False
+  save_checkpoint_epoch: 1
+
+
+inference:
+  split: 'inference'
+  batch_size: 8
+  output_path: 'outputs'
+  cross_validation: True 
+  reference_csv_filename: 'csvs/example.csv'
+
+
+optimizer:
+  critic:
+      name: 'Adam'
+      params:
+        lr: 0.0004
+        betas: [0.5, 0.999]
+
+  gen:
+    name: 'Adam'
+    params:
+      lr: 0.0001
+      betas: [0.5, 0.999]
+  

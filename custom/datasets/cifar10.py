@@ -96,15 +96,15 @@ class CifarUnsvDataset(Dataset):
     def __init__(self,
                  data_dir,
                  split,
-                 folds,
-                 target='bottle',
+                 fold_idx,
+                 num_folds,
+                 target='bird',
                  transform=None,
                  csv_filename='csvs/unsv_learning.csv',
                  **_):
         self.split = split
-        if isinstance(folds, str):
-            folds = [int(i) for i in folds.split(',') if i!='']
-        self.folds = folds
+        self.fold_idx = fold_idx # hold-out
+        self.num_folds = num_folds
         self.target = target
         self.transform = transform
         self.data_dir = data_dir
@@ -121,7 +121,12 @@ class CifarUnsvDataset(Dataset):
         df['OrignalIndex'] = df.index
 
         df = df[df['Category']==self.target]
-        df = df[df['Fold'].isin(self.folds)]
+        if self.split == 'train':
+            folds = [i for i in range(self.num_folds) if i != self.fold_idx]
+            df = df[df.Fold.isin(folds)]
+        else:
+            folds = [self.fold_idx]
+            df = df[df.Fold.isin(folds)]
 
         df = df.reset_index()
 
@@ -134,8 +139,9 @@ class CifarUnsvDataset(Dataset):
         image_id = image_path.split('/')[-1]
         image = cv2.imread(image_path)
 
-        is_anomaly = selected_row['Anomaly']
         org_index = selected_row['OrignalIndex']
+
+        is_anomaly = int(selected_row['Category']!=self.target)
 
         if self.transform is not None:
             image = self.transform(image)

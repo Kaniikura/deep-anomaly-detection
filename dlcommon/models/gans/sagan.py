@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from utils import SpectralNorm
+from .utils import SpectralNorm
 import numpy as np
 
 class Self_Attn(nn.Module):
@@ -38,12 +38,12 @@ class Self_Attn(nn.Module):
         out = out.view(m_batchsize,C,width,height)
         
         out = self.gamma*out + x
-        return out,attention
+        return out#,attention
 
 class Generator(nn.Module):
     """Generator."""
 
-    def __init__(self, batch_size=8, image_size=128, z_dim=100, conv_dim=64):
+    def __init__(self, image_size=128, z_dim=100, conv_dim=64):
         super(Generator, self).__init__()
         self.imsize = image_size
         layer1 = []
@@ -52,7 +52,7 @@ class Generator(nn.Module):
         last = []
 
         repeat_num = int(np.log2(self.imsize)) - 3
-        mult = 2 ** repeat_num # 32
+        mult = 2 ** repeat_num # img_size: 32 -> 4, img_size: 128 -> 16
         layer1.append(SpectralNorm(nn.ConvTranspose2d(z_dim, conv_dim * mult, 4)))
         layer1.append(nn.BatchNorm2d(conv_dim * mult))
         layer1.append(nn.ReLU())
@@ -71,7 +71,15 @@ class Generator(nn.Module):
 
         curr_dim = int(curr_dim / 2)
 
+        self.l1 = nn.Sequential(*layer1)
+        self.l2 = nn.Sequential(*layer2)
+        self.l3 = nn.Sequential(*layer3)
+
         if self.imsize == 128:
+            self.attn1 = Self_Attn( 256, 'relu')
+            self.attn2 = Self_Attn( 128,  'relu')
+            self.attn3 = Self_Attn( 64,  'relu')
+
             layer4 = []
             layer4.append(SpectralNorm(nn.ConvTranspose2d(curr_dim, int(curr_dim / 2), 4, 2, 1)))
             layer4.append(nn.BatchNorm2d(int(curr_dim / 2)))
@@ -86,38 +94,29 @@ class Generator(nn.Module):
             self.l5 = nn.Sequential(*layer5)
             curr_dim = int(curr_dim / 2)
 
+            self.sa_conv = nn.Sequential(self.l1, self.l2, self.l3, self.attn1,
+                                         self.l4, self.attn2, self.l5, self.attn3)
 
-        self.l1 = nn.Sequential(*layer1)
-        self.l2 = nn.Sequential(*layer2)
-        self.l3 = nn.Sequential(*layer3)
+        else:
+            self.attn1 = Self_Attn( 64, 'relu')
+            self.sa_conv = nn.Sequential(self.l1, self.l2, self.l3, self.attn1)
 
         last.append(nn.ConvTranspose2d(curr_dim, 3, 4, 2, 1))
         last.append(nn.Tanh())
         self.last = nn.Sequential(*last)
 
-        self.attn1 = Self_Attn( 256, 'relu')
-        self.attn2 = Self_Attn( 128,  'relu')
-        self.attn3 = Self_Attn( 64,  'relu')
-
     def forward(self, z):
         z = z.view(z.size(0), z.size(1), 1, 1)
-        out=self.l1(z)
-        out=self.l2(out)
-        out=self.l3(out)
-        out,p1 = self.attn1(out)
-        out=self.l4(out)
-        out,p2 = self.attn2(out)
-        out=self.l5(out)
-        out,p3 = self.attn3(out)
-        out=self.last(out)
+        x = self.sa_conv(z)
+        out = self.last(x)
 
-        return out, p1, p2, p3
+        return out
 
 
 class Discriminator(nn.Module):
     """Discriminator, Auxiliary Classifier."""
 
-    def __init__(self, batch_size=8, image_size=128, conv_dim=64):
+    def __init__(self, image_size=128, conv_dim=64):
         super(Discriminator, self).__init__()
         self.imsize = image_size
         layer1 = []
@@ -138,7 +137,15 @@ class Discriminator(nn.Module):
         layer3.append(nn.LeakyReLU(0.1))
         curr_dim = curr_dim * 2
 
+        self.l1 = nn.Sequential(*layer1)
+        self.l2 = nn.Sequential(*layer2)
+        self.l3 = nn.Sequential(*layer3)
+
         if self.imsize == 128:
+            self.attn1 = Self_Attn(256, 'relu')
+            self.attn2 = Self_Attn(512, 'relu')
+            self.attn3 = Self_Attn(1024, 'relu')
+
             layer4 = []
             layer4.append(SpectralNorm(nn.Conv2d(curr_dim, curr_dim * 2, 4, 2, 1)))
             layer4.append(nn.LeakyReLU(0.1))
@@ -151,26 +158,30 @@ class Discriminator(nn.Module):
             self.l5 = nn.Sequential(*layer5)
             curr_dim = curr_dim*2
 
-        self.l1 = nn.Sequential(*layer1)
-        self.l2 = nn.Sequential(*layer2)
-        self.l3 = nn.Sequential(*layer3)
-
+            self.sa_conv = nn.Sequential(self.l1, self.l2, self.l3, self.attn1,
+                                         self.l4, self.attn2, self.l5, self.attn3)
+        
+        else:
+            self.attn1 = Self_Attn(256, 'relu')
+            self.sa_conv = nn.Sequential(self.l1, self.l2, self.l3, self.attn1)
+        
+        self.last_channel = curr_dim
         last.append(nn.Conv2d(curr_dim, 1, 4))
         self.last = nn.Sequential(*last)
 
-        self.attn1 = Self_Attn(256, 'relu')
-        self.attn2 = Self_Attn(512, 'relu')
-        self.attn3 = Self_Attn(1024, 'relu')
+    def get_feature(self, x):
+        x = self.sa_conv(x)
+        out = x.view(-1, self.last_channel*4*4)
+
+        return out
 
     def forward(self, x):
-        out = self.l1(x)
-        out = self.l2(out)
-        out = self.l3(out)
-        out,p1 = self.attn1(out)
-        out=self.l4(out)
-        out,p2 = self.attn2(out)
-        out=self.l5(out)
-        out,p3 = self.attn3(out)
-        out=self.last(out)
+        x = self.sa_conv(x)
+        out = self.last(x)
 
-        return out.squeeze(), p1, p2, p3
+        return out.squeeze()
+
+class SAGAN():
+    def __init__(self, image_size=128, z_dim=100, conv_dim=64):
+        self.G = Generator(image_size, z_dim, conv_dim)
+        self.D = Discriminator(image_size, conv_dim)

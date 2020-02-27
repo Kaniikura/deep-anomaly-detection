@@ -30,6 +30,7 @@ transform:
   num_preprocessor: 8
   params:
     resize_to: (32, 32)
+    is_flip: True
 
 model:
   params:
@@ -44,7 +45,7 @@ train:
   log_step: 2
   batch_size: 64
   gradient_accumulation_step: 1
-  num_epochs: 13
+  num_epochs: 20
   num_keep_checkpoint: 1
   no_bias_decay: False
   save_checkpoint_epoch: 1
@@ -74,7 +75,8 @@ optimizer:
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 8
+    step_size : 5
+    gamma: 0.95
 
 hooks:
   forward:

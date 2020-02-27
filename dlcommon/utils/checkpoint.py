@@ -9,6 +9,8 @@ import torch
 
 
 def get_last_checkpoint(checkpoint_dir):
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoints = [checkpoint
                    for checkpoint in os.listdir(checkpoint_dir)
                    if checkpoint.startswith('epoch_') and checkpoint.endswith('.pth')]
@@ -17,13 +19,15 @@ def get_last_checkpoint(checkpoint_dir):
     return None
 
 
-def get_initial_checkpoint(config):
-    checkpoint_dir = os.path.join(config.train.dir, 'checkpoint')
+def get_initial_checkpoint(config, member=None):
+    checkpoint_name = 'checkpoint' if member is None else f'{member}_checkpoint'
+    checkpoint_dir = os.path.join(config.train.dir, checkpoint_name)
     return get_last_checkpoint(checkpoint_dir)
 
 
-def get_checkpoint(config, name):
-    checkpoint_dir = os.path.join(config.train.dir, 'checkpoint')
+def get_checkpoint(config, name, member=None):
+    checkpoint_name = 'checkpoint' if member is None else f'{member}_checkpoint'
+    checkpoint_dir = os.path.join(config.train.dir, checkpoint_name)
     return os.path.join(checkpoint_dir, name)
 
 
@@ -36,8 +40,9 @@ def remove_old_checkpoint(checkpoint_dir, keep):
         os.remove(os.path.join(checkpoint_dir, checkpoint))
 
 
-def copy_last_n_checkpoints(config, n, name):
-    checkpoint_dir = os.path.join(config.train.dir, 'checkpoint')
+def copy_last_n_checkpoints(config, n, name, member=None):
+    checkpoint_name = 'checkpoint' if member is None else f'{member}_checkpoint'
+    checkpoint_dir = os.path.join(config.train.dir, checkpoint_name)
     checkpoints = [checkpoint
                    for checkpoint in os.listdir(checkpoint_dir)
                    if checkpoint.startswith('epoch_') and checkpoint.endswith('.pth')]
@@ -61,8 +66,9 @@ def load_checkpoint(model, optimizer, checkpoint):
     return last_epoch, step
 
 
-def save_checkpoint(config, model, optimizer, epoch, step=0, keep=None, weights_dict=None, name=None):
-    checkpoint_dir = os.path.join(config.train.dir, 'checkpoint')
+def save_checkpoint(config, model, optimizer, epoch, step=0, keep=None, weights_dict=None, name=None, member=None):
+    checkpoint_name = 'checkpoint' if member is None else f'{member}_checkpoint'
+    checkpoint_dir = os.path.join(config.train.dir, checkpoint_name)
 
     if name:
         checkpoint_path = os.path.join(checkpoint_dir, '{}.pth'.format(name))
