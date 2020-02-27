@@ -84,9 +84,9 @@ def create_csvs(data_dir, data_type):
 
     # csv to refer as example at the time of inference
     if data_type == 'mvtec_ad':
-        df_example = df[['Image', 'Category', 'Anomaly']].copy()
+        df_example = df[['Image', 'Category', 'Anomaly', 'OrgSplit']].copy()
     else:
-        df_example = df[['Image', 'Category']].copy()
+        df_example = df[['Image', 'Category', 'OrgSplit']].copy()
     df_example.to_csv(csv_dir/'example.csv', index=False)
         
     return

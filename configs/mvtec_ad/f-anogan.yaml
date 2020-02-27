@@ -76,7 +76,7 @@ inference:
   batch_size: 8
   output_path: 'outputs'
   cross_validation: True 
-  reference_csv_filename: 'csvs/example.csv'
+  reference_csv_filename: 'example.csv'
 
 
 optimizer:

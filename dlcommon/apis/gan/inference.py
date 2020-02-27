@@ -88,7 +88,7 @@ def inference(config, G, D, E, hooks, dataloaders, score_fn):
 
     hooks.write_result_fn(split=split, output_path=config.inference.output_path, 
                             outputs=outputs_dict, indices=indices ,labels=None, data=None,
-                            is_train=False, reference_csv_filename=None)
+                            is_train=False, reference_csv_filename=config.inference.reference_csv_filename)
 
 
 def run(config):
