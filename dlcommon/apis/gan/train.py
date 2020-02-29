@@ -174,11 +174,11 @@ def train_gan(config, G, D, g_optimizer, d_optimizer,
                                 dataloader, hooks, epoch)
 
         # save models
-        if epoch % config.train.save_checkpoint_epoch == 0:
+        if (epoch+1) % config.train.save_checkpoint_epoch == 0:
             dlcommon.utils.save_checkpoint(config, G, g_optimizer,
-                                        epoch, keep=config.train.num_keep_checkpoint, member='g')
+                                        epoch+1, keep=config.train.num_keep_checkpoint, member='g')
             dlcommon.utils.save_checkpoint(config, D, d_optimizer,
-                                        epoch, keep=config.train.num_keep_checkpoint, member='d')
+                                        epoch+1, keep=config.train.num_keep_checkpoint, member='d')
 
 
 def train_enc_single_epoch(config, G, D, E, e_optimizer, split, dataloader, hooks, epoch):
@@ -251,9 +251,9 @@ def train_encoder(config, G, D, E, e_optimizer, dataloaders, hooks, last_epoch):
                                 dataloader, hooks, epoch)
 
         # save models
-        if epoch % config.train.save_checkpoint_epoch == 0:
+        if (epoch+1) % config.train.save_checkpoint_epoch == 0:
             dlcommon.utils.save_checkpoint(config, E, e_optimizer,
-                                        epoch, keep=config.train.num_keep_checkpoint, member='e')
+                                        epoch+1, keep=config.train.num_keep_checkpoint, member='e')
     
 
 def to_data_parallel(config, model, optimizer):
