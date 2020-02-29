@@ -98,14 +98,14 @@ class CifarUnsvDataset(Dataset):
                  split,
                  fold_idx,
                  num_folds,
-                 target='bird',
+                 anomaly_classes=['bird', 'car', 'dog'],
                  transform=None,
                  csv_filename='csvs/unsv_learning.csv',
                  **_):
         self.split = split
         self.fold_idx = fold_idx # hold-out
         self.num_folds = num_folds
-        self.target = target
+        self.anomaly_classes = anomaly_classes
         self.transform = transform
         self.data_dir = data_dir
         self.csv_filename = csv_filename
@@ -128,6 +128,10 @@ class CifarUnsvDataset(Dataset):
             folds = [self.fold_idx]
             df = df[df.Fold.isin(folds)]
 
+        if self.split=='train' and (self.anomaly_classes is not None):
+            # remove anomaly samples in training
+            df = df[~df.Category.isin(self.anomaly_classes)]
+
         df = df.reset_index()
 
         return df
@@ -141,7 +145,7 @@ class CifarUnsvDataset(Dataset):
 
         org_index = selected_row['OrignalIndex']
 
-        is_anomaly = int(selected_row['Category']!=self.target)
+        is_anomaly = int(selected_row['Category'] in self.anomaly_classes)
 
         if self.transform is not None:
             image = self.transform(image)

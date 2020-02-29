@@ -81,24 +81,10 @@ def inference(config, model, hooks, dataloaders, score_fn):
     outputs_dict, indices = inference_split(config, model, split, dataloader, hooks, score_fn)
     auc = outputs_dict['auc']
     print(f'[{split}] AUC: {auc}')
-
-    from pathlib import Path
-    result_path = Path(config.inference.result_path)
-    if not result_path.is_dir():
-        result_path.mkdir(parents=True)
-    csv_path = result_path/'mvtec.csv'
-
-    if csv_path.exists(): #　overwrite existing csv
-        df = pd.read_csv(csv_path)
-    else:
-        if reference_csv_filename is not None:
-            df = pd.read_csv(reference_csv_filename)
-        else:
-            df = pd.DataFrame(index=indices)
-        df['AnomalyScore'] = np.nan
     
-    df.loc[indices,'AnomalyScore'] = outputs['anomaly_score']
-
+    hooks.write_result_fn(split=split, output_path=config.inference.output_path, 
+                            outputs=outputs_dict, indices=indices ,labels=None, data=None,
+                            is_train=False, reference_csv_filename=config.inference.reference_csv_filename)
 
 def run(config):
     # build hooks
@@ -111,7 +97,7 @@ def run(config):
         model = torch.nn.DataParallel(model)
 
     # load checkpoint
-    checkpoint = config.checkpoint
+    checkpoint = os.path.join(config.train.dir,config.checkpoint)
     last_epoch, step = dlcommon.utils.load_checkpoint(model, None, checkpoint)
     print(f'last_epoch:{last_epoch}')
 
@@ -129,7 +115,7 @@ def run(config):
                 self.mse_elements = MSELoss(reduction='none')
             def __call__(self, input, target):
                 loss_elements = self.mse_elements(input, target)
-                loss_instances = loss_elements.mean(axis=1)
+                loss_instances = loss_elements.mean(axis=(1,2,3))
                 return loss_instances
         score_fn = MSEInstances()  
         

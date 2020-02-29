@@ -72,10 +72,6 @@ class ResEncoder(nn.Module):
             nn.Conv2d(max_dim // 2, max_dim,  4, stride=1),
             nn.ReLU(),
             nn.BatchNorm2d(max_dim),
-            nn.Conv2d(max_dim, max_dim, 3, padding=1),
-            nn.ReLU(),
-            nn.BatchNorm2d(max_dim),
-            
         ])
 
         self.blocks = nn.Sequential(*blocks)

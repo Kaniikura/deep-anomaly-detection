@@ -1,7 +1,12 @@
+data: 
+  name: 'mvtec_ad'
+
+model_name: 'L2AE'
+
 dataset:
-  name: 'UnsvDataset'
+  name: 'MVTecUnsvDataset'
   params:
-    data_dir: 'data/mvtec_ad'
+    data_dir: 'data'
     target: 'bottle'
     csv_filename: 'csvs/unsv_learning.csv'
 
@@ -28,17 +33,22 @@ transform:
 
 model:
   name: 'AutoEncoder'
+  params:
+    image_size: 256
+    z_dim: 100
+    max_dim: 512
+    n_res_block: 2
 
-#checkpoint: train_dirs/AdaCos/1/checkpoint/epoch_0000.pth
+checkpoint: checkpoint/epoch_0100.pth
 
 train:
-  dir: 'train_dirs/L2-AE'
+  dir: 'train_dirs'
   log_step: 2
   image_log_step: 5
   batch_size: 8
   num_epochs: 100
-  num_keep_checkpoint: 5
-  save_checkpoint_epoch: 1
+  num_keep_checkpoint: 20
+  save_checkpoint_epoch: 50
 
 evaluation:
   batch_size: 8
@@ -46,9 +56,9 @@ evaluation:
 inference:
   split: 'inference'
   batch_size: 8
-  output_path: 'outputs/L2-AE/'
+  output_path: 'outputs'
   cross_validation: True 
-  reference_csv_filename: 'data/mvtec_ad/csvs/example.csv'
+  reference_csv_filename: 'example.csv'
 
 loss:
   name: MSELoss  
@@ -56,12 +66,12 @@ loss:
 optimizer:
   name: 'Adam'
   params:
-    lr: 0.005
+    lr: 0.01
 
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 100
+    step_size : 50
 
 hooks:
   forward:

@@ -181,9 +181,9 @@ def train(config, model, hooks, optimizer, scheduler, dataloaders, last_epoch):
                                       name='best.score')
             dlcommon.utils.copy_last_n_checkpoints(config, 5, 'best.score.{:04d}.pth')
 
-        if epoch % config.train.save_checkpoint_epoch == 0:
+        if (epoch+1) % config.train.save_checkpoint_epoch == 0:
             dlcommon.utils.save_checkpoint(config, model, optimizer,
-                                        epoch, keep=config.train.num_keep_checkpoint)
+                                        epoch+1, keep=config.train.num_keep_checkpoint)
 
 
 def to_data_parallel(config, model, optimizer):

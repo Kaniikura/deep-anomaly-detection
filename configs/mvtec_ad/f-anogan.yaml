@@ -8,7 +8,7 @@ dataset:
   params:
     data_dir: 'data'
     csv_filename: 'csvs/unsv_learning.csv'
-    target: 'grid'
+    target: 'screw'
 
   splits:
     - mode: 'train'
@@ -62,8 +62,8 @@ train:
   noisy_label_prob: 0.05
   lambda_gp: 10
   z_dim: 100
-  num_epochs: 1000
-  num_keep_checkpoint: 20
+  num_epochs: 3000
+  num_keep_checkpoint: 100
   no_bias_decay: False
   save_checkpoint_epoch: 50
 
