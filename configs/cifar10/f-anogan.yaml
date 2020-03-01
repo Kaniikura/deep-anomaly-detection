@@ -10,7 +10,7 @@ dataset:
     csv_filename: 'csvs/unsv_learning.csv'
     fold_idx: 1
     num_folds: 2
-    target: 'bird'
+    anomaly_classes: ['bird', 'car', 'dog']
 
   splits:
     - mode: 'train'
@@ -47,7 +47,9 @@ model:
       n_res_block: 1
 
 checkpoint: 
-  gen: checkpoint/best.score.pth
+  g: g_checkpoint/epoch_1000.pth
+  d: d_checkpoint/epoch_1000.pth
+  e: e_checkpoint/epoch_0300.pth
 
 train:
   adv_loss: 'wgan-gp'
@@ -57,12 +59,13 @@ train:
   batch_size: 64
   critic_iter : 1
   gen_iter : 1
+  noisy_label_prob: 0.05
   lambda_gp: 10
   z_dim: 64
-  num_epochs: 300
-  num_keep_checkpoint: 1
+  num_epochs: 1000
+  num_keep_checkpoint: 100
   no_bias_decay: False
-  save_checkpoint_epoch: 1
+  save_checkpoint_epoch: 50
 
   encoder:
     num_epochs: 300
@@ -72,9 +75,10 @@ train:
 inference:
   split: 'inference'
   batch_size: 8
+  use_feature_loss: False
   output_path: 'outputs'
   cross_validation: True 
-  reference_csv_filename: 'csvs/example.csv'
+  reference_csv_filename: 'example.csv'
 
 
 optimizer:
@@ -95,3 +99,6 @@ optimizer:
     params:
       lr: 0.001
   
+hooks:
+  metric: 
+    name: 'AEMetricHook'

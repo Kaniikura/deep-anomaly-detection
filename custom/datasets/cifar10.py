@@ -120,7 +120,6 @@ class CifarUnsvDataset(Dataset):
         df = df.fillna('')
         df['OrignalIndex'] = df.index
 
-        df = df[df['Category']==self.target]
         if self.split == 'train':
             folds = [i for i in range(self.num_folds) if i != self.fold_idx]
             df = df[df.Fold.isin(folds)]
