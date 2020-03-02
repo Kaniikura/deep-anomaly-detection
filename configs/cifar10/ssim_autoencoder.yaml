@@ -1,7 +1,7 @@
 data: 
   name: 'cifar10'
 
-model_name: 'SSIM-AE'
+model_name: 'SSIMAE'
 
 dataset:
   name: 'CifarUnsvDataset' 
@@ -10,18 +10,7 @@ dataset:
     csv_filename: 'csvs/unsv_learning.csv'
     fold_idx: 1
     num_folds: 2
-    anomaly_classes: [
-    'plane',
-    #'car',
-    #'bird',
-    #'cat' ,
-    #'deer',
-    #'dog',
-    #'frog',
-    #'horse',
-    #'ship' ,
-    #'truck', 
-    ]
+    anomaly_classes: ['bird', 'car', 'dog']
 
 
   splits:
@@ -54,14 +43,14 @@ model:
     max_dim: 256
     n_res_block: 2
 
-checkpoint: checkpoint/epoch_0200.pth
+checkpoint: checkpoint/epoch_0100.pth
 
 train:
   dir: 'train_dirs'
   log_step: 2
   image_log_step: 2
   batch_size: 128
-  num_epochs: 200
+  num_epochs: 300
   num_keep_checkpoint: 10
   save_checkpoint_epoch: 10
 
@@ -78,9 +67,10 @@ loss:
   name: SSIMLoss  
 
 optimizer:
-  name: 'Adam'
+  name: 'SGD'
   params:
     lr: 0.01
+    momentum: 0.9
 
 scheduler:
   name: 'StepLR'

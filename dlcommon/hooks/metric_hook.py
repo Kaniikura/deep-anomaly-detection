@@ -14,15 +14,15 @@ class MetricHookBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def __call__(self, inputs, labels, split, train_labels=None):
+    def __call__(self, inputs, labels, split, train_labels=None, k=10):
         pass
 
 class DefaultMetricHook(MetricHookBase):
-    def __call__(self, inputs, labels, split, train_labels=None):
+    def __call__(self, inputs, labels, split, train_labels=None, k=10):
         return
 
 class DMLMetricHook(MetricHookBase):
-    def __call__(self, inputs, labels, split, train_labels=None):
+    def __call__(self, inputs, labels, split, train_labels=None, k=10):
         if split == 'evaluation':
             # multi-label classification
             if isinstance(labels, torch.Tensor):
@@ -41,7 +41,8 @@ class DMLMetricHook(MetricHookBase):
             if isinstance(labels, torch.Tensor):
                 labels = labels.numpy()
             assert len(inputs.shape) == 2
-            preds = np.min(inputs, axis=1) # min distance is anomaly score
+            idx = np.argpartition(inputs, k, axis=1)[:,:k]
+            preds = np.take_along_axis(inputs, idx, axis=1).mean(axis=1)
             fpr, tpr, thresholds = metrics.roc_curve(labels, preds)
             auc = metrics.auc(fpr, tpr)
             res = {'auc': auc, 'thresholds': thresholds, 'anomaly_score':preds, 'label':labels}
@@ -49,7 +50,7 @@ class DMLMetricHook(MetricHookBase):
         return res
 
 class AEMetricHook(MetricHookBase):
-    def __call__(self, inputs, labels, split, train_labels=None):
+    def __call__(self, inputs, labels, split, train_labels=None, k=10):
         if isinstance(labels, torch.Tensor):
                 labels = labels.numpy()
         assert len(inputs.shape) == 1
