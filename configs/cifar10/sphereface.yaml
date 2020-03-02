@@ -11,7 +11,7 @@ dataset:
     csv_filename: 'csvs/metric_learning.csv'
     fold_idx: 1
     num_folds: 2
-    anomaly_classes: ['bird', 'plane', 'cat']
+    anomaly_classes: ['bird', 'car', 'dog']
 
   splits:
     - mode: 'train'
@@ -30,7 +30,6 @@ transform:
   num_preprocessor: 8
   params:
     resize_to: (32, 32)
-    is_flip: True
 
 model:
   params:
@@ -43,11 +42,12 @@ checkpoint: checkpoint/best.score.pth
 train:
   dir: 'train_dirs'
   log_step: 2
-  batch_size: 64
+  batch_size: 128
   gradient_accumulation_step: 1
-  num_epochs: 10
+  num_epochs: 20
   num_keep_checkpoint: 1
   no_bias_decay: False
+  encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
@@ -75,6 +75,8 @@ scheduler:
   name: 'StepLR'
   params:
     step_size : 5
+    gamma: 0.95
+
 
 hooks:
   forward:

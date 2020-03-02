@@ -77,7 +77,6 @@ inference:
   batch_size: 8
   use_feature_loss: False
   output_path: 'outputs'
-  cross_validation: True 
   reference_csv_filename: 'example.csv'
 
 

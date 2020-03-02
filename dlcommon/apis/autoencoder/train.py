@@ -71,7 +71,7 @@ def train_single_epoch(config, model, split, dataloader,
             log_dict['gen_images'] = outputs.detach().cpu()
         
         hooks.logger_fn(split=split, outputs=outputs, labels=None, log_dict=log_dict,
-                        epoch=epoch, step=i, num_steps_in_epoch=total_step, is_normalized=False)
+                        epoch=epoch, step=i, num_steps_in_epoch=total_step, is_normalized=True)
     
 
 def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
@@ -111,7 +111,7 @@ def validate_single_epoch(config, model, split, dataloader, hooks, epoch):
             log_dict = {}
             
             hooks.logger_fn(split=split, outputs=outputs, labels=None, log_dict=log_dict,
-                        epoch=epoch, step=i, num_steps_in_epoch=total_step)
+                        epoch=epoch, step=i, num_steps_in_epoch=total_step, is_normalized=True)
 
     log_dict = {key: sum(value)/len(value) for key, value in aggregated_loss_dict.items()}
             

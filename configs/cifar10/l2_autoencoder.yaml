@@ -1,0 +1,84 @@
+data: 
+  name: 'cifar10'
+
+model_name: 'L2AE'
+
+dataset:
+  name: 'CifarUnsvDataset' 
+  params:
+    data_dir: 'data'
+    csv_filename: 'csvs/unsv_learning.csv'
+    fold_idx: 1
+    num_folds: 2
+    anomaly_classes: ['bird', 'car', 'dog']
+
+
+  splits:
+    - mode: 'train'
+      split: 'train'
+      folds: 0,
+    - mode: 'validation'
+      split: 'validation'
+      folds: 1,
+    - mode: 'evaluation'
+      split: 'evaluation'
+      folds: 1,
+    - mode: 'inference'
+      split: 'inference'
+      folds: 2,
+
+transform:
+  name: 'unsv_transform'
+  num_preprocessor: 8
+  params:
+    resize_to: (32, 32)
+    is_flip: True
+    normalize: True
+
+model:
+  name: 'AutoEncoder'
+  params:
+    image_size: 32
+    z_dim: 100
+    max_dim: 256
+    n_res_block: 2
+
+checkpoint: checkpoint/epoch_0100.pth
+
+train:
+  dir: 'train_dirs'
+  log_step: 2
+  image_log_step: 2
+  batch_size: 128
+  num_epochs: 100
+  num_keep_checkpoint: 10
+  save_checkpoint_epoch: 10
+
+evaluation:
+  batch_size: 128
+
+inference:
+  split: 'inference'
+  batch_size: 8
+  output_path: 'outputs'
+  reference_csv_filename: 'example.csv'
+
+loss:
+  name: MSELoss  
+
+optimizer:
+  name: 'Adam'
+  params:
+    lr: 0.01
+
+scheduler:
+  name: 'StepLR'
+  params:
+    step_size : 50
+
+hooks:
+  forward:
+    name: 'AEForwardHook'
+  metric:
+    name: 'AEMetricHook'
+
