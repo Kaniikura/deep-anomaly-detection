@@ -43,15 +43,15 @@ model:
     max_dim: 256
     n_res_block: 2
 
-checkpoint: checkpoint/epoch_0100.pth
+checkpoint: checkpoint/epoch_0050.pth
 
 train:
   dir: 'train_dirs'
   log_step: 2
   image_log_step: 2
   batch_size: 128
-  num_epochs: 100
-  num_keep_checkpoint: 10
+  num_epochs: 50
+  num_keep_checkpoint: 5
   save_checkpoint_epoch: 10
 
 evaluation:
@@ -67,9 +67,10 @@ loss:
   name: MSELoss  
 
 optimizer:
-  name: 'Adam'
+  name: 'SGD'
   params:
     lr: 0.01
+    momentum: 0.9
 
 scheduler:
   name: 'StepLR'

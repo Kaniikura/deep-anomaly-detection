@@ -63,7 +63,7 @@ train:
   lambda_gp: 10
   z_dim: 64
   num_epochs: 1000
-  num_keep_checkpoint: 100
+  num_keep_checkpoint: 10
   no_bias_decay: False
   save_checkpoint_epoch: 50
 
