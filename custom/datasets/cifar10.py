@@ -31,6 +31,8 @@ class CifarMetricDataset(Dataset):
         self.transform = transform
         self.data_dir = data_dir
         self.num_classes = num_classes
+        if isinstance(anomaly_classes,str):
+            anomaly_classes = [anomaly_classes]
         self.anomaly_classes = anomaly_classes
         self.onehot_enc = onehot_enc
         self.csv_filename = csv_filename
@@ -105,6 +107,8 @@ class CifarUnsvDataset(Dataset):
         self.split = split
         self.fold_idx = fold_idx # hold-out
         self.num_folds = num_folds
+        if isinstance(anomaly_classes,str):
+            anomaly_classes = [anomaly_classes]
         self.anomaly_classes = anomaly_classes
         self.transform = transform
         self.data_dir = data_dir

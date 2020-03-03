@@ -45,10 +45,10 @@ train:
   dir: 'train_dirs'
   log_step: 2
   image_log_step: 5
-  batch_size: 8
+  batch_size: 16
   num_epochs: 100
-  num_keep_checkpoint: 20
-  save_checkpoint_epoch: 50
+  num_keep_checkpoint: 10
+  save_checkpoint_epoch: 10
 
 evaluation:
   batch_size: 8
@@ -64,9 +64,10 @@ loss:
   name: MSELoss  
 
 optimizer:
-  name: 'Adam'
+  name: 'SGD'
   params:
-    lr: 0.01
+    lr: 0.001
+    momentum: 0.9
 
 scheduler:
   name: 'StepLR'

@@ -50,7 +50,7 @@ train:
   log_step: 2
   image_log_step: 2
   batch_size: 128
-  num_epochs: 300
+  num_epochs: 100
   num_keep_checkpoint: 10
   save_checkpoint_epoch: 10
 

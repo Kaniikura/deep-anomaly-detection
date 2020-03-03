@@ -1,13 +1,13 @@
-seed: 686653144
+data: 
+  name: 'mvtec_ad'
 
-data: mvtec_ad
-model_name: SSIM-AE
+model_name: 'SSIMAE'
 
 dataset:
-  name: 'UnsvDataset'
+  name: 'MVTecUnsvDataset'
   params:
     data_dir: 'data'
-    target: 'grid'
+    target: 'bottle'
     csv_filename: 'csvs/unsv_learning.csv'
 
   splits:
@@ -33,17 +33,22 @@ transform:
 
 model:
   name: 'AutoEncoder'
+  params:
+    image_size: 256
+    z_dim: 100
+    max_dim: 512
+    n_res_block: 2
 
-checkpoint: best.score.pth
+checkpoint: checkpoint/epoch_0100.pth
 
 train:
   dir: 'train_dirs'
   log_step: 2
   image_log_step: 5
-  batch_size: 8
-  num_epochs: 200
-  num_keep_checkpoint: 5
-  save_checkpoint_epoch: 1
+  batch_size: 16
+  num_epochs: 100
+  num_keep_checkpoint: 10
+  save_checkpoint_epoch: 10
 
 evaluation:
   batch_size: 8
@@ -51,22 +56,23 @@ evaluation:
 inference:
   split: 'inference'
   batch_size: 8
-  output_path: 'outputs' 
-  result_path: 'outputs/result/'
+  output_path: 'outputs'
   cross_validation: True 
+  reference_csv_filename: 'example.csv'
 
 loss:
   name: SSIMLoss  
 
 optimizer:
-  name: 'Adam'
+  name: 'SGD'
   params:
     lr: 0.001
+    momentum: 0.9
 
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 100
+    step_size : 50
 
 hooks:
   forward:

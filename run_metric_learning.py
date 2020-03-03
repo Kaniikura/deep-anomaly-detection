@@ -28,7 +28,7 @@ def eval_config(config):
     modelname = str(config.model_name)
     config.model.name = modelname
     config.dataset.params.data_dir = os.path.join(str(config.dataset.params.data_dir),dataname)
-    config.train.dir = os.path.join(str(config.train.dir), dataname, modelname, str(config.dataset.params.fold_idx))
+    config.train.dir = os.path.join(str(config.train.dir), dataname, modelname.lower(), str(config.dataset.params.fold_idx))
     config.checkpoint = os.path.join(str(config.train.dir), str(config.checkpoint))
     config.inference.output_path = os.path.join(str(config.inference.output_path), dataname ,modelname)
     config.inference.reference_csv_filename = os.path.join(str(config.dataset.params.data_dir), 

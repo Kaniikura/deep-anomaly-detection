@@ -1,17 +1,16 @@
 data: 
-  name: 'cifar10'
-  num_classes: 10
-
-model_name: 'SphereFace'
+  name: 'mvtec_ad'
+  num_classes: 15
+  
+model_name: 'CosFace'
 
 dataset:
-  name: 'CifarMetricDataset' 
+  name: 'MVTecMetricDataset'
   params:
     data_dir: 'data'
     csv_filename: 'csvs/metric_learning.csv'
-    fold_idx: 1
-    num_folds: 2
-    anomaly_classes: ['bird', 'car', 'dog']
+    fold_idx: 0
+    num_folds: 10
 
   splits:
     - mode: 'train'
@@ -29,12 +28,12 @@ transform:
   name: 'metric_transform'
   num_preprocessor: 8
   params:
-    resize_to: (32, 32)
+    resize_to: (256, 256)
 
 model:
   params:
     num_features: 512
-    num_classes: 10
+    num_classes: 15
     encoder: 'resnet18'
 
 checkpoint: checkpoint/best.score.pth
@@ -42,20 +41,20 @@ checkpoint: checkpoint/best.score.pth
 train:
   dir: 'train_dirs'
   log_step: 2
-  batch_size: 128
+  batch_size: 16
   gradient_accumulation_step: 1
-  num_epochs: 20
-  num_keep_checkpoint: 1
+  num_epochs: 2
+  num_keep_checkpoint: 2
   no_bias_decay: False
-  #encoder_lr_ratio: 0.1
+  encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
-  batch_size: 128
+  batch_size: 16
 
 inference:
   split: 'inference'
-  batch_size: 128
+  batch_size: 16
   output_path: 'outputs'
   cross_validation: True 
   reference_csv_filename: 'csvs/example.csv'
@@ -66,17 +65,15 @@ loss:
     gamma: 2
 
 optimizer:
-  name: 'SGD'
+  name: 'Adam'
   params:
     lr: 0.001
-    momentum: 0.9
+    weight_decay: 0.1
 
 scheduler:
   name: 'StepLR'
   params:
-    step_size : 5
-    gamma: 0.95
-
+    step_size : 1
 
 hooks:
   forward:

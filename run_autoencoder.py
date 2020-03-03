@@ -27,7 +27,7 @@ def eval_config(config):
     dataname = str(config.data.name)
     modelname = str(config.model_name)
     config.dataset.params.data_dir = os.path.join(str(config.dataset.params.data_dir),dataname)
-    config.train.dir = os.path.join(str(config.train.dir), dataname, modelname)
+    config.train.dir = os.path.join(str(config.train.dir), dataname, modelname.lower())
     config.inference.output_path = os.path.join(config.inference.output_path,dataname,modelname)
     config.inference.reference_csv_filename = os.path.join('data', dataname, 'csvs', 
                                                             config.inference.reference_csv_filename)

@@ -47,7 +47,7 @@ train:
   num_epochs: 20
   num_keep_checkpoint: 1
   no_bias_decay: False
-  encoder_lr_ratio: 0.1
+  #encoder_lr_ratio: 0.1
   save_checkpoint_epoch: 1
 
 evaluation:
