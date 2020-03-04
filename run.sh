@@ -32,19 +32,22 @@ data='cifar10'
 #done
 
 # autoencoder
-#for model in 'l2_autoencoder' 'ssim_autoencoder'
-#    for t in 'plane' 'car' 'bird' 'cat' 'deer' 'dog' 'frog' 'horse' 'ship' 'truck'
-#    do
-#        echo $t >> result.txt
-#        python run_autoencoder.py train with configs/$data/$model.yaml -f dataset.params.anomaly_classes=$t
-#        python run_autoencoder.py inference with configs/$data/$model.yaml -f dataset.params.anomaly_classes=$t >> result.txt
-#        rm -r train_dirs/$data/ssimae
-#        rm -r train_dirs/$data/l2ae
-#    done
-#done
+for model in 'l2_autoencoder' 'ssim_autoencoder'
+do
+    for t in 'plane' 'car' 'bird' 'cat' 'deer' 'dog' 'frog' 'horse' 'ship' 'truck'
+    do
+        echo $t >> result.txt
+        python run_autoencoder.py train with configs/$data/$model.yaml -f dataset.params.anomaly_classes=$t
+        python run_autoencoder.py inference with configs/$data/$model.yaml -f dataset.params.anomaly_classes=$t >> result.txt
+        rm -r train_dirs/$data/ssimae
+        rm -r train_dirs/$data/l2ae
+    done
+done
 
 # gan
+"""
 for model in 'f-anogan'
+do
     for t in 'plane' 'car' 'bird' 'cat' 'deer' 'dog' 'frog' 'horse' 'ship' 'truck'
     do
         echo $t >> result.txt
@@ -53,3 +56,4 @@ for model in 'f-anogan'
         rm -r train_dirs/$data/sagan
     done
 done
+"""

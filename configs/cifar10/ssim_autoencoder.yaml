@@ -43,7 +43,7 @@ model:
     max_dim: 256
     n_res_block: 2
 
-checkpoint: checkpoint/epoch_0050.pth
+checkpoint: checkpoint/epoch_0100.pth
 
 train:
   dir: 'train_dirs'
