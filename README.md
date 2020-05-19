@@ -1,5 +1,10 @@
 # deep-anomaly-detection
 
+# Set Environment
+``` bash
+$ conda env create -f myenv.yaml
+```
+
 # Prepare dataset
 ## Download dataset
 Download and extract CIFAR10, MNIST and MVTec Anomaly Detection Dataset.
