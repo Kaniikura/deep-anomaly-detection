@@ -1,4 +1,4 @@
-name: deep2
+name: deepAD
 channels:
   - pytorch
   - defaults
