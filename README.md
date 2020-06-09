@@ -14,6 +14,7 @@ $ python tools/create_data_folder.py
 ```
 
 ## Generate CSV files
+Create the dataframes needed to pass data to the model
 ``` bash
 $ python tools/make_csvs.py
 ```
@@ -25,5 +26,10 @@ In configs directory, you can find configurations I used to produce my models.
 To train models, run following commands.
 
 ``` bash
-$ python run.py train_gan with {config_path} -f
+$ python run{_gan, _autoencoder, _metric_learning}.py train with {config_path} -f
+```
+
+## Inferecne
+``` bash
+$ python run{_gan, _autoencoder, _metric_learning}.py inference with {config_path} -f
 ```
